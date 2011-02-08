@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+	<string name="name_label">Meeting name</string>
+	<string name="default_meeting_name">My meeting</string>
+    <string name="create">Create meeting</string>
+    <string name="app_name">ImReady</string>
+</resources>
