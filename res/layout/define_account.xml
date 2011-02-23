@@ -11,18 +11,18 @@
 		android:layout_weight="1"
 		android:gravity="bottom"
 		android:padding="10dp">
-		<TextView android:id="@+id/main_nickname"
-		    android:layout_width="match_parent" 
-		    android:layout_height="wrap_content"
-		    android:text="@string/main_nickname"/>
 		<TextView  
 		    android:layout_width="match_parent" 
 		    android:layout_height="wrap_content"
-		    android:text="@string/name_label"/>
-		<EditText android:id="@+id/meeting_name"
+		    android:text="@string/define_account_desc"/>
+		<EditText android:id="@+id/define_account_nickname"
 			android:layout_width="match_parent" 
 		    android:layout_height="wrap_content" 
-		    android:text="@string/default_meeting_name"/>
+		    android:text="@string/define_account_nickname"/>
+		<EditText android:id="@+id/define_account_username"
+			android:layout_width="match_parent" 
+		    android:layout_height="wrap_content" 
+		    android:text="@string/define_account_username"/>
 	</LinearLayout>
 	<LinearLayout
 		android:orientation="vertical"
@@ -30,9 +30,13 @@
 		android:layout_height="wrap_content"
 		android:layout_weight="2"
 		android:padding="10dp">
-		<Button android:id="@+id/create_meeting_button" 
+		<Button android:id="@+id/define_account_new_button" 
 			android:layout_width="match_parent" 
 			android:layout_height="wrap_content"
-			android:text="@string/create"/>
+			android:text="@string/define_account_new_button"/>
+		<Button android:id="@+id/define_account_existing_button" 
+			android:layout_width="match_parent" 
+			android:layout_height="wrap_content"
+			android:text="@string/define_account_existing_button"/>
 	</LinearLayout>
 </LinearLayout>
