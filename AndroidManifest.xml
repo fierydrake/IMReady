@@ -14,5 +14,8 @@
             </intent-filter>
         </activity>
 
-    </application>
+    
+
+<activity android:name="DefineAccount"></activity>
+</application>
 </manifest>
