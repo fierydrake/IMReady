@@ -14,7 +14,6 @@ import org.json.JSONObject;
 import org.json.JSONTokener;
 
 import android.app.Activity;
-import android.content.Intent;
 import android.content.SharedPreferences;
 import android.net.http.AndroidHttpClient;
 import android.os.AsyncTask;
@@ -28,30 +27,21 @@ import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
-public class Main extends Activity {
-	
-	public static final String PREFERENCES_NAME = "IMReadyPrefs";
-	private static final int ACTIVITY_GET_ACCOUNT = 0;
+public class CreateMeeting extends Activity {
 	
     /** Called when the activity is first created. */
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-    	boolean accountDefined = getSharedPreferences(PREFERENCES_NAME, MODE_PRIVATE).getBoolean("accountDefined", false);
-        if(!accountDefined){
-        	// Launch activity for account def.
-        	startActivityForResult( new Intent(Main.this, DefineAccount.class), ACTIVITY_GET_ACCOUNT);
-        }
-        
-        setContentView(R.layout.main);
+        setContentView(R.layout.create_meeting);
         
         final Button createMeeting = (Button)findViewById(R.id.create_meeting_button);
-        final EditText meetingName = (EditText)findViewById(R.id.meeting_name);
+        final EditText meetingName = (EditText)findViewById(R.id.create_meeting_meeting_name);
         
-        String nickName = getSharedPreferences(PREFERENCES_NAME, MODE_PRIVATE).getString("accountNickName", "");
+        String nickName = getSharedPreferences(IMReady.PREFERENCES_NAME, MODE_PRIVATE).getString("accountNickName", "");
         if (!nickName.equalsIgnoreCase("")) {
-            TextView welcomeLine = (TextView)findViewById(R.id.main_nickname);
+            TextView welcomeLine = (TextView)findViewById(R.id.create_meeting_nickname);
         	welcomeLine.setText("Hello " + nickName);
         }
 
@@ -72,19 +62,6 @@ public class Main extends Activity {
                 return false;
             }
         });
-    }
-
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-    	if (requestCode == ACTIVITY_GET_ACCOUNT){
-    		if(resultCode == 0){
-    			String nickName = getSharedPreferences(PREFERENCES_NAME, MODE_PRIVATE).getString("accountNickName", "");
-    	        if (!nickName.equalsIgnoreCase("")) {
-    	            TextView welcomeLine = (TextView)findViewById(R.id.main_nickname);
-    	        	welcomeLine.setText("Hello " + nickName);
-    	        }
-    		}
-    	}
     }
 
     private void createMeeting(final String name) {
@@ -112,17 +89,17 @@ public class Main extends Activity {
 	    	    }
 	    	    protected void onPostExecute(String id) {
 	    	    	if (id != null) {
-		        		Toast.makeText(Main.this, "Your meeting '"+name+"' was created with id "+id, Toast.LENGTH_SHORT).show();
+		        		Toast.makeText(CreateMeeting.this, "Your meeting '"+name+"' was created with id "+id, Toast.LENGTH_SHORT).show();
 	    	    	} else {
-	    	    		Toast.makeText(Main.this, "Failed: " +error, Toast.LENGTH_SHORT).show();
+	    	    		Toast.makeText(CreateMeeting.this, "Failed: " +error, Toast.LENGTH_SHORT).show();
 	    	    	}
 	    	    }
 	    	}.execute(postRequest);
 		} catch (URISyntaxException e) {
-    		Toast.makeText(Main.this, "Failed: " +e, Toast.LENGTH_SHORT).show();
+    		Toast.makeText(CreateMeeting.this, "Failed: " +e, Toast.LENGTH_SHORT).show();
      	}
 		
-		SharedPreferences.Editor preferences = getSharedPreferences(PREFERENCES_NAME, MODE_PRIVATE).edit();
+		SharedPreferences.Editor preferences = getSharedPreferences(IMReady.PREFERENCES_NAME, MODE_PRIVATE).edit();
 		preferences.remove("accountDefined");
         preferences.remove("accountUserName");
         preferences.remove("accountNickName");

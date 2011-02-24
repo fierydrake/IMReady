@@ -11,18 +11,18 @@
 		android:layout_weight="1"
 		android:gravity="bottom"
 		android:padding="10dp">
-		<TextView android:id="@+id/main_nickname"
+		<TextView android:id="@+id/create_meeting_nickname"
 		    android:layout_width="match_parent" 
 		    android:layout_height="wrap_content"
-		    android:text="@string/main_nickname"/>
+		    android:text="@string/create_meeting_nickname"/>
 		<TextView  
 		    android:layout_width="match_parent" 
 		    android:layout_height="wrap_content"
-		    android:text="@string/name_label"/>
-		<EditText android:id="@+id/meeting_name"
+		    android:text="@string/create_meeting_name_label"/>
+		<EditText android:id="@+id/create_meeting_meeting_name"
 			android:layout_width="match_parent" 
 		    android:layout_height="wrap_content" 
-		    android:text="@string/default_meeting_name"/>
+		    android:text="@string/create_meeting_default_meeting_name"/>
 	</LinearLayout>
 	<LinearLayout
 		android:orientation="vertical"
@@ -33,6 +33,6 @@
 		<Button android:id="@+id/create_meeting_button" 
 			android:layout_width="match_parent" 
 			android:layout_height="wrap_content"
-			android:text="@string/create"/>
+			android:text="@string/create_meeting_create"/>
 	</LinearLayout>
 </LinearLayout>
