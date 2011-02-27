@@ -14,6 +14,7 @@ import org.json.JSONObject;
 import org.json.JSONTokener;
 
 import android.app.Activity;
+import android.content.SharedPreferences;
 import android.net.http.AndroidHttpClient;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -23,17 +24,26 @@ import android.view.View.OnClickListener;
 import android.view.View.OnKeyListener;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.TextView;
 import android.widget.Toast;
 
-public class Main extends Activity {
+public class CreateMeeting extends Activity {
+	
     /** Called when the activity is first created. */
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.main);
+
+        setContentView(R.layout.create_meeting);
         
         final Button createMeeting = (Button)findViewById(R.id.create_meeting_button);
-        final EditText meetingName = (EditText)findViewById(R.id.meeting_name);
+        final EditText meetingName = (EditText)findViewById(R.id.create_meeting_meeting_name);
+        
+        String nickName = getSharedPreferences(IMReady.PREFERENCES_NAME, MODE_PRIVATE).getString("accountNickName", "");
+        if (!nickName.equalsIgnoreCase("")) {
+            TextView welcomeLine = (TextView)findViewById(R.id.create_meeting_nickname);
+        	welcomeLine.setText("Hello " + nickName);
+        }
 
         createMeeting.setOnClickListener(new OnClickListener() {
             public void onClick(View v) {
@@ -53,7 +63,7 @@ public class Main extends Activity {
             }
         });
     }
-        
+
     private void createMeeting(final String name) {
     	final AndroidHttpClient http = AndroidHttpClient.newInstance("Android ImReady 0.1");
 		try {
@@ -79,14 +89,20 @@ public class Main extends Activity {
 	    	    }
 	    	    protected void onPostExecute(String id) {
 	    	    	if (id != null) {
-		        		Toast.makeText(Main.this, "Your meeting '"+name+"' was created with id "+id, Toast.LENGTH_SHORT).show();
+		        		Toast.makeText(CreateMeeting.this, "Your meeting '"+name+"' was created with id "+id, Toast.LENGTH_SHORT).show();
 	    	    	} else {
-	    	    		Toast.makeText(Main.this, "Failed: " +error, Toast.LENGTH_SHORT).show();
+	    	    		Toast.makeText(CreateMeeting.this, "Failed: " +error, Toast.LENGTH_SHORT).show();
 	    	    	}
 	    	    }
 	    	}.execute(postRequest);
 		} catch (URISyntaxException e) {
-    		Toast.makeText(Main.this, "Failed: " +e, Toast.LENGTH_SHORT).show();
+    		Toast.makeText(CreateMeeting.this, "Failed: " +e, Toast.LENGTH_SHORT).show();
      	}
+		
+		SharedPreferences.Editor preferences = getSharedPreferences(IMReady.PREFERENCES_NAME, MODE_PRIVATE).edit();
+		preferences.remove("accountDefined");
+        preferences.remove("accountUserName");
+        preferences.remove("accountNickName");
+		preferences.commit();
     }
 }
