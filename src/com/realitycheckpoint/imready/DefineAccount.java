@@ -70,59 +70,59 @@ public class DefineAccount extends Activity {
 
 	private void createAccount(int accountType, String username, String nickname){
 		if (accountType == NEW_ACCOUNT) {
-    		Toast.makeText(DefineAccount.this, "Account created <" + username + "> <" + nickname + ">", Toast.LENGTH_LONG).show();
-    		
-    		SharedPreferences.Editor preferences = getSharedPreferences(IMReady.PREFERENCES_NAME, MODE_PRIVATE).edit();
-            preferences.putBoolean("accountDefined", true);
+//    		Toast.makeText(DefineAccount.this, "Account created <" + username + "> <" + nickname + ">", Toast.LENGTH_LONG).show();
+//    		
+//    		SharedPreferences.Editor preferences = getSharedPreferences(IMReady.PREFERENCES_NAME, MODE_PRIVATE).edit();
+//            preferences.putBoolean("accountDefined", true);
+//            preferences.putString("accountUserName", username);
+//            preferences.putString("accountNickName", nickname);
+//    		preferences.commit();
+//            
+//    		startActivityForResult( new Intent(DefineAccount.this, CreateMeeting.class), ACTIVITY_GET_ACCOUNT);
+
+			SharedPreferences.Editor preferences = getSharedPreferences(IMReady.PREFERENCES_NAME, MODE_PRIVATE).edit();
             preferences.putString("accountUserName", username);
             preferences.putString("accountNickName", nickname);
-    		preferences.commit();
             
-    		startActivityForResult( new Intent(DefineAccount.this, CreateMeeting.class), ACTIVITY_GET_ACCOUNT);
-
-//			final AndroidHttpClient http = AndroidHttpClient.newInstance("Android ImReady 0.1");
-//			try {
-//				URI uri = new URI("http://www.monkeysplayingpingpong.co.uk:54321/participants");
-//		    	HttpPost postRequest = new HttpPost(uri);
-//		    	BasicHttpParams params = new BasicHttpParams();
-//		    	params.setParameter("name", nickname);
-//		    	params.setParameter("username", username);
-//		    	postRequest.setParams(params);
-//		    	new AsyncTask<HttpPost, Void, String>() {
-//		    		private Throwable error = null;
-//		    	    protected String doInBackground(HttpPost... request) {
-//		    	    	try {
-//			    	    	HttpResponse response = http.execute(request[0]);
-//			    	    	String body = new BufferedReader(new InputStreamReader(response.getEntity().getContent())).readLine();
-//			    	    	String id = ((JSONObject)new JSONTokener(body).nextValue()).getString("id");
-//			    	    	return id;
-//		    	    	} catch (JSONException e) {
-//		    	    		error = e;
-//			    	   	} catch (IOException e) {
-//			        		error = e;
-//			    	    }
-//			    	   	return null;
-//		    	    }
-//		    	    protected void onPostExecute(String username, String nickname) {
-//		    	    	if (username != null && nickname != null) {
-//			        		Toast.makeText(DefineAccount.this, "Account created <" + username + "> <" + nickname + ">", Toast.LENGTH_LONG).show();
-//			        		
-//			        		SharedPreferences.Editor preferences = getSharedPreferences(IMReady.PREFERENCES_NAME, MODE_PRIVATE).edit();
-//			                preferences.putBoolean("accountDefined", true);
-//			                preferences.putString("accountUserName", username);
-//			                preferences.putString("accountNickName", nickname);
-//			        		preferences.commit();
-//			                
-//			        		startActivityForResult( new Intent(DefineAccount.this, CreateMeeting.class), ACTIVITY_GET_ACCOUNT);
-//
-//		    	    	} else {
-//		    	    		Toast.makeText(DefineAccount.this, "Failed: " +error, Toast.LENGTH_LONG).show();
-//		    	    	}
-//		    	    }
-//		    	}.execute(postRequest);
-//			} catch (URISyntaxException e) {
-//	    		Toast.makeText(DefineAccount.this, "Failed: " +e, Toast.LENGTH_LONG).show();
-//	     	}
+			final AndroidHttpClient http = AndroidHttpClient.newInstance("Android ImReady 0.1");
+			try {
+				URI uri = new URI("http://www.monkeysplayingpingpong.co.uk:54321/participants");
+		    	HttpPost postRequest = new HttpPost(uri);
+		    	BasicHttpParams params = new BasicHttpParams();
+		    	params.setParameter("name", nickname);
+		    	params.setParameter("username", username);
+		    	postRequest.setParams(params);
+		    	new AsyncTask<HttpPost, Void, Boolean>() {
+		    		private Throwable error = null;
+		    	    protected Boolean doInBackground(HttpPost... request) {
+		    	    	try {
+			    	    	HttpResponse response = http.execute(request[0]);
+			    	    	//  my $content = "{\"username\":\"$username\", \"name\":\"$name\"}";
+			    	    	String body = new BufferedReader(new InputStreamReader(response.getEntity().getContent())).readLine();
+			    	    	String id = ((JSONObject)new JSONTokener(body).nextValue()).getString("id");
+			    	    	return true;
+		    	    	} catch (JSONException e) {
+		    	    		error = e;
+			    	   	} catch (IOException e) {
+			        		error = e;
+			    	    }
+			    	   	return false;
+		    	    }
+		    	    protected void onPostExecute(Boolean success) {
+		    	    	if (success) {
+			        		SharedPreferences.Editor preferences = getSharedPreferences(IMReady.PREFERENCES_NAME, MODE_PRIVATE).edit();
+			                preferences.putBoolean("accountDefined", true);
+			                preferences.commit();
+			                
+			        		startActivityForResult( new Intent(DefineAccount.this, CreateMeeting.class), ACTIVITY_GET_ACCOUNT);
+		    	    	} else {
+		    	    		Toast.makeText(DefineAccount.this, "Failed: " +error, Toast.LENGTH_LONG).show();
+		    	    	}
+		    	    }
+		    	}.execute(postRequest);
+			} catch (URISyntaxException e) {
+	    		Toast.makeText(DefineAccount.this, "Failed: " +e, Toast.LENGTH_LONG).show();
+	     	}
 
 		} else if (accountType == EXISTING_ACCOUNT) {
 //			final AndroidHttpClient http = AndroidHttpClient.newInstance("Android ImReady 0.1");
