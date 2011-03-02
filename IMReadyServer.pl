@@ -151,7 +151,8 @@ sub returnParticipant {
 
 sub debug {
     my $msg = shift;
-    print STDERR $msg;
+    my $timestamp = localtime(time);
+    print STDERR $timestamp . " : " . $msg;
     print STDERR "\n";
 }
 
