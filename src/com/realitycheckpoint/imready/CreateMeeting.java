@@ -65,7 +65,7 @@ public class CreateMeeting extends Activity {
     }
 
     private void createMeeting(final String name) {
-    	final AndroidHttpClient http = AndroidHttpClient.newInstance("Android ImReady 0.1");
+    	final AndroidHttpClient http = AndroidHttpClient.newInstance(IMReady.CLIENT_HTTP_NAME);
 		try {
 			URI uri = new URI("http://www.monkeysplayingpingpong.co.uk:54321/meetings");
 	    	HttpPost postRequest = new HttpPost(uri);
