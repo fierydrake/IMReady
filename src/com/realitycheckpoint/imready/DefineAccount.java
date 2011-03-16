@@ -79,7 +79,7 @@ public class DefineAccount extends Activity {
 		if (accountType == NEW_ACCOUNT) {
 
 			SharedPreferences.Editor preferences = getSharedPreferences(IMReady.PREFERENCES_NAME, MODE_PRIVATE).edit();
-            preferences.putString("accountUserName", username);
+			preferences.putString("accountUserName", username);
             preferences.putString("accountNickName", nickname);
             preferences.commit();
             
@@ -140,9 +140,9 @@ public class DefineAccount extends Activity {
 		} else if (accountType == EXISTING_ACCOUNT) {
 			
 			SharedPreferences.Editor preferences = getSharedPreferences(IMReady.PREFERENCES_NAME, MODE_PRIVATE).edit();
-            preferences.putString("accountUserName", username);
-            preferences.putString("accountNickName", nickname);
-            preferences.commit();
+			preferences.putString("accountUserName", username);
+			preferences.putString("accountNickName", nickname);
+			preferences.commit();
 
             final AndroidHttpClient http = AndroidHttpClient.newInstance(IMReady.CLIENT_HTTP_NAME);
 			try {
