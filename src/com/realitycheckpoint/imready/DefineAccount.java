@@ -81,6 +81,7 @@ public class DefineAccount extends Activity {
 			SharedPreferences.Editor preferences = getSharedPreferences(IMReady.PREFERENCES_NAME, MODE_PRIVATE).edit();
             preferences.putString("accountUserName", username);
             preferences.putString("accountNickName", nickname);
+            preferences.commit();
             
 			final AndroidHttpClient http = AndroidHttpClient.newInstance(IMReady.CLIENT_HTTP_NAME);
 			try {
@@ -130,7 +131,7 @@ public class DefineAccount extends Activity {
 						/* Now we have an account, we can go to create a meeting */
 						startActivityForResult( new Intent(DefineAccount.this, CreateMeeting.class), ACTIVITY_GOT_ACCOUNT);
 					} else {
-						Toast.makeText(DefineAccount.this, "Hmm - I fear that someone has already bagsied one of those names.", Toast.LENGTH_LONG).show();
+						Toast.makeText(DefineAccount.this, "Hmm - I fear that someone has already bagsied that username.", Toast.LENGTH_LONG).show();
 					}
 				}
 			}.execute(postRequest);
@@ -141,6 +142,7 @@ public class DefineAccount extends Activity {
 			SharedPreferences.Editor preferences = getSharedPreferences(IMReady.PREFERENCES_NAME, MODE_PRIVATE).edit();
             preferences.putString("accountUserName", username);
             preferences.putString("accountNickName", nickname);
+            preferences.commit();
 
             final AndroidHttpClient http = AndroidHttpClient.newInstance(IMReady.CLIENT_HTTP_NAME);
 			try {
@@ -176,7 +178,7 @@ public class DefineAccount extends Activity {
 						/* Now we have an account, we can go to create a meeting */
 						startActivityForResult( new Intent(DefineAccount.this, CreateMeeting.class), ACTIVITY_GOT_ACCOUNT);
 					} else {
-						Toast.makeText(DefineAccount.this, "Hmm - the server knows not this name of which you speak.", Toast.LENGTH_LONG).show();
+						Toast.makeText(DefineAccount.this, "Hmm - the server knows not this username of which you speak.", Toast.LENGTH_LONG).show();
 					}
 				}
 			}.execute(getRequest);

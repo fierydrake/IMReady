@@ -42,7 +42,7 @@ public class CreateMeeting extends Activity {
         
         final Button createMeeting = (Button)findViewById(R.id.create_meeting_button);
         final EditText meetingName = (EditText)findViewById(R.id.create_meeting_meeting_name);
-        
+
         String nickName = getSharedPreferences(IMReady.PREFERENCES_NAME, MODE_PRIVATE).getString("accountNickName", "");
         if (!nickName.equalsIgnoreCase("")) {
             TextView welcomeLine = (TextView)findViewById(R.id.create_meeting_nickname);
