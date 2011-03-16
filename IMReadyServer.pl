@@ -21,7 +21,6 @@ my $latestKey = 1;
 
 # Let's connect to a db
 use DBI;
-my $db = DBI->connect("DBI:mysql:$dbName", $dbUser, $dbPass) || die "No db connect: $DBI::errstr";
  
 while($running){
     my $daemon = HTTP::Daemon->new( LocalPort => 54321 ) || die "Oops - Failed to even start a server.";
@@ -29,20 +28,21 @@ while($running){
     while (my $connection = $daemon->accept) {
         debug('Accepted connection');
         if (my $request = $connection->get_request) {
+            my $db = DBI->connect("DBI:mysql:$dbName", $dbUser, $dbPass) || die "No db connect: $DBI::errstr";
             if ( $request->uri->path eq '/meetings' ) {
                 if ( $request->method eq 'GET' ){
                     debug('Return meetings');
-                    returnMeetings($connection);
+                    returnMeetings($db, $connection);
                 } elsif ( $request->method eq 'POST' ) {
                     debug('Create meeting');
-                    createMeeting($connection, $request);
+                    createMeeting($db, $connection, $request);
                 } else {
                     $connection->send_error();
                 }
             } elsif ( $request->uri->path eq '/participants' ) {
                 if ( $request->method eq 'POST' ) {
                     debug('Create participant');
-                    createParticipant($connection, $request);
+                    createParticipant($db, $connection, $request);
                 } else {
                     $connection->send_error();
                 }
@@ -50,23 +50,22 @@ while($running){
                 my $username = $1;
                 if ( $request->method eq 'GET' ) {
                     debug('Return participant');
-                    returnParticipant($connection, $username);
+                    returnParticipant($db, $connection, $username);
                 } else {
                     $connection->send_error();
                 }
             } else {
                 $connection->send_error();
             }
+            $db->disconnect();
         }
         $connection->close;
         undef($connection);
     }
 }
 
-# Not executed atm, can only quit server with signal atm
-$db->disconnect();
-
 sub returnMeetings {
+    my $db = shift;
     my $conn = shift;
 
     my $hdr     = HTTP::Headers->new(Content_Type => 'text/html',
@@ -78,6 +77,7 @@ sub returnMeetings {
 }
 
 sub createMeeting {
+    my $db = shift;
     my $conn = shift;
     my $req  = shift;
 
@@ -91,6 +91,7 @@ sub createMeeting {
 }
 
 sub createParticipant {
+    my $db = shift;
     my $conn = shift;
     my $req = shift;
 
@@ -125,6 +126,7 @@ sub createParticipant {
 }
 
 sub returnParticipant {
+    my $db = shift;
     my $conn = shift;
     my $username = shift;
 
