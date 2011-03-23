@@ -66,7 +66,9 @@ public class DefineAccount extends Activity {
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
     	/* If returning after ACTIVITY_GOT_ACCOUNT then just exit this Activity */
     	if (requestCode == ACTIVITY_GOT_ACCOUNT){
-    		finish();
+    		if(resultCode != RESULT_CANCELED){
+    			finish();
+    		}
     	}
     }
 

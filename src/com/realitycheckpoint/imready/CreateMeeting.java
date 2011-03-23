@@ -90,6 +90,7 @@ public class CreateMeeting extends Activity {
         	
         	Toast.makeText(CreateMeeting.this, "Blanked", Toast.LENGTH_SHORT).show();
 
+        	setResult(RESULT_CANCELED);
         	finish();
         	return true;
         default:
