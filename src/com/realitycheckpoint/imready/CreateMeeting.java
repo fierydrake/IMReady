@@ -111,7 +111,7 @@ public class CreateMeeting extends Activity {
 	    	    protected String doInBackground(HttpPost... request) {
 	    	    	try {
 		    	    	HttpResponse response = http.execute(request[0]);
-		    	    	String body = new BufferedReader(new InputStreamReader(response.getEntity().getContent())).readLine();
+		    	    	String body = new BufferedReader(new InputStreamReader(response.getEntity().getContent()), 2048).readLine();
 		    	    	String id = ((JSONObject)new JSONTokener(body).nextValue()).getString("id");
 		    	    	return id;
 	    	    	} catch (JSONException e) {
