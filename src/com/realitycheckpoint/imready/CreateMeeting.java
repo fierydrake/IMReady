@@ -118,6 +118,8 @@ public class CreateMeeting extends Activity {
 	    	    		error = e;
 		    	   	} catch (IOException e) {
 		        		error = e;
+		    	    } finally {
+		    	    	http.close();
 		    	    }
 		    	   	return null;
 	    	    }

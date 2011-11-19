@@ -121,6 +121,8 @@ public class DefineAccount extends Activity {
 						return ( response.getStatusLine().getStatusCode() == 200 );
 					} catch (IOException e) {
 						Toast.makeText(DefineAccount.this, "Hmm - Something went wrong while trying to register your account...\n" + e, Toast.LENGTH_LONG).show();
+					} finally {
+						http.close();
 					}
 					return false;
 				}
