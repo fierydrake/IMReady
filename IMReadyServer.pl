@@ -8,6 +8,7 @@ use HTTP::Headers;
 use HTTP::Message;
 use CGI;
 #use JSON;
+use Redis;
 
 my ($dbName, $dbUser, $dbPass) = readConfig();
 
@@ -21,7 +22,7 @@ my $latestKey = 1;
 
 # Let's connect to a db
 use DBI;
- 
+
 while($running){
     my $daemon = HTTP::Daemon->new( LocalPort => 54321 ) || die "Oops - Failed to even start a server.";
 
@@ -71,7 +72,7 @@ sub returnMeetings {
     my $hdr     = HTTP::Headers->new(Content_Type => 'text/html',
                                      Connection   => 'close');
     my $content = "<html><body><p>Hello World</p></body></html>";
-    
+
     my $resp = HTTP::Response->new(RC_OK, "", $hdr, $content);
     $conn->send_response($resp);
 }
@@ -81,10 +82,25 @@ sub createMeeting {
     my $conn = shift;
     my $req  = shift;
 
+    my $q = CGI->new($req->content);
+    my $username = $q->param('username');
+    my $meetingName = $q->param('name');
+    debug('Asked to make meeting for ' . $username . ' called ' . $meetingName);
+
+    my $redis = Redis->new( server => 'localhost:6379', encoding => undef );
+    my $id    = $redis->incr('util:counter:meetings');
+    $redis->set("meeting:$id:name" => $meetingName);
+    $redis->set("meeting:$id:state" => 0);
+    $redis->set("meeting:$id:creator:member" => $username);
+    $redis->set("meeting:$id:creator:state" => 0);
+    $redis->set("meeting:$id:creator:notified" => 1);
+    $redis->sadd("member:$username:meetings" => $id);
+    $redis->quit;
+
     my $hdr     = HTTP::Headers->new(Content_Type => 'application/json',
                                      Connection   => 'close');
     #my $content = to_json($id);
-    my $content = "{\"id\":\"1\"}";
+    my $content = "{\"id\":\"$id\"}";
 
     my $resp = HTTP::Response->new(RC_OK, "", $hdr, $content);
     $conn->send_response($resp);
@@ -132,7 +148,7 @@ sub returnParticipant {
 
     my $hdr     = HTTP::Headers->new(Content_Type => 'application/json',
                                      Connection   => 'close');
-    
+
     debug('Look-up user');
     my $s = $db->prepare("SELECT name,username FROM users WHERE username=?");
     $s->execute($username);
