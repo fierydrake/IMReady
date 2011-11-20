@@ -14,7 +14,9 @@ import org.json.JSONObject;
 import org.json.JSONTokener;
 
 import android.app.Activity;
+import android.content.Intent;
 import android.content.SharedPreferences;
+import android.net.Uri;
 import android.net.http.AndroidHttpClient;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -125,6 +127,8 @@ public class CreateMeeting extends Activity {
 	    	    protected void onPostExecute(String id) {
 	    	    	if (id != null) {
 		        		Toast.makeText(CreateMeeting.this, "Your meeting '"+name+"' was created with id "+id, Toast.LENGTH_SHORT).show();
+		        		Uri internalMeetingUri = Uri.parse("content://com.realitycheckpoint.imready/meeting/" + id + "/" + Uri.encode(name)); // TODO hackish
+		        		startActivity( new Intent(Intent.ACTION_VIEW, internalMeetingUri, CreateMeeting.this, ViewMeeting.class) );
 	    	    	} else {
 	    	    		Toast.makeText(CreateMeeting.this, "Failed: " +error, Toast.LENGTH_SHORT).show();
 	    	    	}
