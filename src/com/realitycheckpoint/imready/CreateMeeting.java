@@ -20,7 +20,6 @@ import org.json.JSONObject;
 import org.json.JSONTokener;
 
 import android.app.Activity;
-import android.app.Instrumentation.ActivityResult;
 import android.content.SharedPreferences;
 import android.net.http.AndroidHttpClient;
 import android.os.AsyncTask;
@@ -128,13 +127,15 @@ public class CreateMeeting extends Activity {
 	    	    protected String doInBackground(HttpPost... request) {
 	    	    	try {
 		    	    	HttpResponse response = http.execute(request[0]);
-		    	    	String body = new BufferedReader(new InputStreamReader(response.getEntity().getContent())).readLine();
+		    	    	String body = new BufferedReader(new InputStreamReader(response.getEntity().getContent()), 2048).readLine();
 		    	    	String id = ((JSONObject)new JSONTokener(body).nextValue()).getString("id");
 		    	    	return id;
 	    	    	} catch (JSONException e) {
 	    	    		error = e;
 		    	   	} catch (IOException e) {
 		        		error = e;
+		    	    } finally {
+		    	    	http.close();
 		    	    }
 		    	   	return null;
 	    	    }
