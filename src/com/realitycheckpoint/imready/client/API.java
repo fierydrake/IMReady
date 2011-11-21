@@ -68,6 +68,7 @@ public class API {
 			URI uri = new URI(SERVER_URI).resolve("meetings");
 	    	HttpPost postRequest = new HttpPost(uri);
 	    	BasicHttpParams params = new BasicHttpParams();
+	    	params.setParameter("creator", me.getId());
 	    	params.setParameter("name", name);
 	    	postRequest.setParams(params);
 	    	HttpResponse response = http.execute(postRequest);
