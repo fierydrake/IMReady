@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="ISO-8859-1">
+<title>IMReady &gt; doc &gt; server &gt; meetings</title>
+</head>
+<body>
+<h1>Lifecycle</h1>
+<svg width="640" height="480" xmlns="http://www.w3.org/2000/svg">
+ <!-- Created with SVG-edit - http://svg-edit.googlecode.com/ -->
+ <g>
+  <title>Layer 1</title>
+  <rect fill="#ffffff" stroke="#000000" x="311" y="60" width="282" height="370" id="svg_2"/>
+  <line id="svg_8" y2="10" x2="457" y1="59" x1="457" stroke="#000000" fill="none"/>
+  <line id="svg_9" y2="469" x2="457" y1="430" x1="457" stroke="#000000" fill="none"/>
+  <text fill="#000000" stroke="#FFFFFF" stroke-width="0" x="346" y="82" id="svg_3" font-size="15" font-family="Sans-serif" text-anchor="middle" xml:space="preserve">meeting:</text>
+  <text xml:space="preserve" text-anchor="middle" font-family="Sans-serif" font-size="15" id="svg_4" y="82" x="426" stroke-width="0" stroke="#FFFFFF" fill="#000000">name (string)</text>
+  <text xml:space="preserve" text-anchor="middle" font-family="Sans-serif" font-size="15" id="svg_5" y="99" x="436" stroke-width="0" stroke="#FFFFFF" fill="#000000">uniqueID (string)</text>
+  <text xml:space="preserve" text-anchor="middle" font-family="Sans-serif" font-size="15" id="svg_6" y="117" x="419" stroke-width="0" stroke="#FFFFFF" fill="#000000">state (bool)</text>
+  <text xml:space="preserve" text-anchor="middle" font-family="Sans-serif" font-size="15" id="svg_7" y="133" x="485" stroke-width="0" stroke="#FFFFFF" fill="#000000">msn (&lt;member/state/notified&gt;)</text>
+  <line fill="none" stroke="#000000" x1="311" y1="60" x2="132" y2="60" id="svg_10"/>
+  <line id="svg_11" y2="50" x2="301" y1="60" x1="311" stroke="#000000" fill="none"/>
+  <line id="svg_12" y2="70" x2="301" y1="60" x1="311" stroke="#000000" fill="none"/>
+  <line id="svg_13" fill="none" stroke="#000000" x1="311" y1="190" x2="132" y2="190"/>
+  <line id="svg_14" y2="180" x2="301" y1="190" x1="311" stroke="#000000" fill="none"/>
+  <line id="svg_15" y2="200" x2="301" y1="190" x1="311" stroke="#000000" fill="none"/>
+  <line id="svg_16" fill="none" stroke="#000000" x1="310" y1="263" x2="130" y2="263"/>
+  <line id="svg_17" y2="253" x2="301" y1="263" x1="311" stroke="#000000" fill="none"/>
+  <line id="svg_18" y2="273" x2="301" y1="263" x1="311" stroke="#000000" fill="none"/>
+  <line id="svg_19" fill="none" stroke="#000000" x1="311" y1="336" x2="131" y2="336"/>
+  <line id="svg_20" y2="326" x2="301" y1="336" x1="311" stroke="#000000" fill="none"/>
+  <line id="svg_21" y2="346" x2="301" y1="336" x1="311" stroke="#000000" fill="none"/>
+  <line id="svg_22" fill="none" stroke="#000000" x1="311" y1="410" x2="132" y2="410"/>
+  <line id="svg_23" y2="400" x2="301" y1="410" x1="311" stroke="#000000" fill="none"/>
+  <line id="svg_24" y2="420" x2="301" y1="410" x1="311" stroke="#000000" fill="none"/>
+  <text fill="#000000" stroke="#000000" stroke-width="0" x="152" y="50" id="svg_25" font-size="15" font-family="Sans-serif" text-anchor="middle" xml:space="preserve">define: member in, name in, uniqueID out</text>
+  <text fill="#000000" stroke="#000000" stroke-width="0" x="155" y="180" id="svg_26" font-size="15" font-family="Sans-serif" text-anchor="middle" xml:space="preserve">modifiy: member in, add/remove in, rc out</text>
+  <text fill="#000000" stroke="#000000" stroke-width="0" x="145" y="253" id="svg_27" font-size="15" font-family="Sans-serif" text-anchor="middle" xml:space="preserve">check: member in, list of uniqueID out</text>
+  <text fill="#000000" stroke="#000000" stroke-width="0" x="138" y="328" id="svg_28" font-size="15" font-family="Sans-serif" text-anchor="middle" xml:space="preserve">update: member in, state in, rc out</text>
+  <text fill="#000000" stroke="#000000" stroke-width="0" x="111" y="398" id="svg_29" font-size="15" font-family="Sans-serif" text-anchor="middle" xml:space="preserve">notify: member in, rc out</text>
+  <text fill="#000000" stroke="#000000" stroke-width="0" x="487" y="450" id="svg_30" font-size="15" font-family="Sans-serif" text-anchor="middle" xml:space="preserve">death</text>
+ </g>
+</svg>
+
+<h1>Definitions</h1>
+<h3>meeting (noun)</h3>
+<p>A meeting has a collection of 'member/state/notified' triplets.  A meeting has a 'name' and a 'unique ID'. A meeting has a 'state'. 
+When all member triplets have a state value of 'ready', the meeting state is also 'ready'.</p>
+<h3>member (noun)</h3>
+<p>A participant in a transaction.  A member can call verbs on a meeting.</p>
+<h3>state (noun)</h3>
+<p>A value for the participant's readiness, or the meeting's overall readiness.  Takes the value 'unready' or 'ready'.</p>
+<h3>notified (noun)</h3>
+<p>A value indicating if the member has been notified that a meeting is ready.</p>
+<h3>define (verb)</h3>
+<p>A member can define a new meeting.  The member provides the meeting 'name'.  The 'unique ID' for the meeting is
+returned to the member that created the meeting.  The member that creates a meeting is added to the list of members in that
+meeting.</p>
+<h3>modify (verb)</h3>
+<p>A member can add or remove 'member/state/notified' triplets from a meeting.  Each triplet is identified by the 'member' value.</p>
+<h3>check (verb)</h3>
+<p>A member can query for a list of meetings that they are a member of.</p>
+<h3>update (verb)</h3>
+<p>A member can update their state for a meeting as 'ready' or 'unready'.  This modifies the corresponding entry in the meeting's
+'member/state/notified' list.  Once a meeting is in the 'ready' state, a member cannot update their state to 'unready'.</p>
+<h3>notify (verb)</h3>
+<p>When a meeting has a state of 'ready', all members may be notified that the meeting is ready.  No new 'member/state/notified' 
+triplets can be added to the meeting.  Given that communications are state-less, a member has to query when a meeting is ready.
+When a member is told that a meeting is ready, their 'member/state/notified' triplet is updated to set the notified value to 'true'.
+(Note - consider the situation where a member calls 'modified' on a meeting that is 'ready'.  This implies that a member should be
+returned an error that defines the meeting as ready.  Now consider the same situation where the member calls modified and no member 
+has been notified yet.  Do we allow the modify action and return the state to unready?  Are we saying that the meeting is only in state 
+'ready' once a member has been notified?)</p>
+<h3>death (verb)</h3>
+<p>This is the end of the meeting object's existence.  When all members have been notified, the meeting is destroyed.  Alternatively,
+once an acceptable time has passed since the meeting entered the ready state (that is to say, all members are ready), the meeting is 
+destroyed.</p>
+
+<h1>Extras</h1>
+<h3>List all meetings</h3>
+<p>The server can be queried for all living meetings</p>
+<h3>List a meeting</h3>
+<p>The 'member/state/notified' list for a meeting can be queried, along with the meeting 'name', 'unique ID' and 'state'.</p>
+
+<h1>Problems</h1>
+<p>What about badly behaved members; what about members who never go ready?  Need to draw out state diagram and make sure all 
+states have an inherent path to 'finished'.</p>
+</body>
+</html>

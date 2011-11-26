@@ -1,0 +1,35 @@
+
+util:counter:meetings <key>
+ A counter showing the meeting_id of the next meeting to be created.
+
+util:list:meetings <set>
+ A list of all active meetings.
+
+meeting:{meeting_id}:name <key>
+ The name of meeting {meeting}
+
+meeting:{meeting_id}:state <key>
+ The state of meeting {meeting}
+
+meeting:{meeting_id}:participants <set>
+ The participants of meeting {meeting}
+
+meeting:{meeting_id}:{participant_id}:state <key>
+ The state of participant {participant_id} in meeting {meeting_id}
+
+meeting:{meeting_id}:{participant_id}:notified <key>
+ The notification value for participant {participant_id} in meeting {meeting_id}
+
+user:{user_id}:meetings <set>
+ The list of active meetings that user {user_id} is a participant of
+
+user:{user_id} <key>
+ A flag for a user's existence.  This uses Redis as a cache for DB lookups.
+ Defined on user creation and user queries.
+ Note that this key expires after 100,000 seconds (just over a day).
+
+user:{user_id}:nickname <key>
+ The nickname for user {user_id}.  This uses Redis as a cache for DB lookups.
+ Defined on user creation and user queries.
+ Note that this key expires after 100,000 seconds (just over a day).
+ 
