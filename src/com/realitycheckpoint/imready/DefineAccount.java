@@ -87,7 +87,7 @@ public class DefineAccount extends Activity {
             
 			final AndroidHttpClient http = AndroidHttpClient.newInstance(IMReady.CLIENT_HTTP_NAME);
 			try {
-				uri = new URI("http://www.monkeysplayingpingpong.co.uk:54321/participants");
+				uri = new URI("http://www.monkeysplayingpingpong.co.uk:54321/users");
 			} catch (URISyntaxException  e) {
 				Toast.makeText(DefineAccount.this, "Failed - bad URI: " +e, Toast.LENGTH_LONG).show();
 				return;
@@ -96,8 +96,8 @@ public class DefineAccount extends Activity {
 			HttpPost postRequest = new HttpPost(uri);
 
 			List<NameValuePair> nameValuePairs = new ArrayList<NameValuePair>(2);
-			nameValuePairs.add(new BasicNameValuePair("name", nickname));
-			nameValuePairs.add(new BasicNameValuePair("username", username));
+			nameValuePairs.add(new BasicNameValuePair("defaultNickname", nickname));
+			nameValuePairs.add(new BasicNameValuePair("id", username));
 			try {
 				postRequest.setEntity(new UrlEncodedFormEntity(nameValuePairs));
 			} catch (UnsupportedEncodingException e){
@@ -105,8 +105,8 @@ public class DefineAccount extends Activity {
 			}
 
 			BasicHttpParams params = new BasicHttpParams();
-			params.setParameter("name", nickname);
-			params.setParameter("username", username);
+			params.setParameter("defaultNickname", nickname);
+			params.setParameter("id", username);
 			postRequest.setParams(params);
 			new AsyncTask<HttpPost, Void, Boolean>() {
 				protected Boolean doInBackground(HttpPost... request) {
@@ -150,7 +150,7 @@ public class DefineAccount extends Activity {
 
             final AndroidHttpClient http = AndroidHttpClient.newInstance(IMReady.CLIENT_HTTP_NAME);
 			try {
-				uri = new URI("http://www.monkeysplayingpingpong.co.uk:54321/participant/" + username);
+				uri = new URI("http://www.monkeysplayingpingpong.co.uk:54321/user/" + username);
 			} catch (URISyntaxException e) {
 				Toast.makeText(DefineAccount.this, "Failed - bad URI: " +e, Toast.LENGTH_LONG).show();
 				return;

@@ -258,6 +258,12 @@ sub createUser {
         return;
     }
 
+    if( userExists($id) ){
+        debug('User id already taken');
+        $conn->send_error(400, 'User id already taken');
+        return;
+    }
+
     my $db;
     unless ( $db = DBI->connect("DBI:mysql:$dbName", $dbUser, $dbPass) ){
         debug('Failed to connect to database');
@@ -265,36 +271,30 @@ sub createUser {
         return;
     }
 
-    my $s = $db->prepare("SELECT name,username FROM users WHERE username=?");
-    $s->execute($id);
-    my $result = $s->fetchrow_hashref();
-    if ($result) {
-        debug('User already taken');
-        $conn->send_error(400, 'User already taken');
-    } else {
-        debug('Create user');
-        $s = $db->prepare("INSERT INTO users (name,username) VALUES (?,?)");
-        my $rows = $s->execute($nickname, $id);
-        if ($rows == 1) {
-            debug('Success');
-            my $content = "{\"username\":\"$id\", \"name\":\"$nickname\"}";
+    debug('Create user');
+    my $s = $db->prepare("INSERT INTO users (name,username) VALUES (?,?)");
+    my $rows = $s->execute($nickname, $id);
+    if ($rows == 1) {
+        debug('Success');
+        my $content = "{\"username\":\"$id\", \"name\":\"$nickname\"}";
 
-            my $redis;
-            if ( $redis = Redis->new( server => 'localhost:6379', encoding => undef ) ) {
-                $redis->setex( "user:$id:nickname", 100000, $nickname );
-            } else {
-                debug('Failed to connect to Redis.  Never mind.');
-            }
-
-            my $hdr     = HTTP::Headers->new(Content_Type => 'application/json',
-                                             Connection   => 'close');
-            my $resp = HTTP::Response->new(RC_OK, "", $hdr, $content);
-            $conn->send_response($resp);
+        my $redis;
+        if ( $redis = Redis->new( server => 'localhost:6379', encoding => undef ) ) {
+            $redis->set( "user:$id:nickname", $nickname );
+            $redis->expire( "user:$id:nickname", 100000 );
         } else {
-            debug('Failure, $rows rows inserted');
-            $conn->send_error(500, "Internal error");
+            debug('Failed to connect to Redis.  Never mind.');
         }
+
+        my $hdr     = HTTP::Headers->new(Content_Type => 'application/json',
+                                             Connection   => 'close');
+        my $resp = HTTP::Response->new(RC_OK, "", $hdr, $content);
+        $conn->send_response($resp);
+    } else {
+        debug('Failure, $rows rows inserted');
+        $conn->send_error(500, "Internal error");
     }
+
     $s->finish();
     $db->disconnect();
 }
@@ -358,7 +358,7 @@ sub userExists {
     # Check Redis first;
     my $redis;
     if ( $redis = Redis->new( server => 'localhost:6379', encoding => undef ) ) {
-        if ( $redis->sismember( "util:list:users", $id) ) {
+        if ( $redis->get( "user:$id" ) ) {
             debug( 'Redis found user <' . $id . '>' );
             return 1;
         }
@@ -377,7 +377,8 @@ sub userExists {
         if ($result) {
             debug( 'Database found user <' . $id . '>' );
             if ( $redis = Redis->new( server => 'localhost:6379', encoding => undef ) ) {
-                $redis->setex( "user:$id", 100000, 1);
+                $redis->set( "user:$id", 1);
+                $redis->expire( "user:$id", 100000);
             } else {
                 debug( 'Failed to connect to Redis.  User flag not cached' );
             }
@@ -409,17 +410,20 @@ sub getNickname {
     # Then check the DB
     my $db;
     if ( $db = DBI->connect("DBI:mysql:$dbName", $dbUser, $dbPass) ){
-        my $s = $db->prepare("SELECT username FROM users WHERE username=?");
+        my $s = $db->prepare("SELECT name FROM users WHERE username=?");
         $s->execute($id);
-        my $nickname = $s->fetchrow_hashref();
+        my $result = $s->fetchrow_hashref();
         $s->finish();
         $db->disconnect();
     
-        if ($nickname) {
+        if ($result) {
+        	my $nickname = $result->{'name'};
             debug( 'Database found user <' . $id . '> with nickname <' . $nickname . '>' );
             if ( $redis = Redis->new( server => 'localhost:6379', encoding => undef ) ) {
-                $redis->setex( "user:$id:nickname", 100000, $nickname );
-                $redis->setex( "user:$id", 100000, 1);
+                $redis->set( "user:$id:nickname", $nickname );
+                $redis->expire( "user:$id:nickname", 100000 );
+                $redis->set( "user:$id", 1);
+                $redis->expire( "user:$id", 100000);
             } else {
                 debug( 'Failed to connect to Redis.  User nickname not cached' );
             }

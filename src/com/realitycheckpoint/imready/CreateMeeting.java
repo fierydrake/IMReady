@@ -111,7 +111,7 @@ public class CreateMeeting extends Activity {
 
 	    	List<NameValuePair> nameValuePairs = new ArrayList<NameValuePair>(2);
 			nameValuePairs.add(new BasicNameValuePair("name", name));
-			nameValuePairs.add(new BasicNameValuePair("username", getSharedPreferences(IMReady.PREFERENCES_NAME, MODE_PRIVATE).getString("accountUserName", "")));
+			nameValuePairs.add(new BasicNameValuePair("creator", getSharedPreferences(IMReady.PREFERENCES_NAME, MODE_PRIVATE).getString("accountUserName", "")));
 			try {
 				postRequest.setEntity(new UrlEncodedFormEntity(nameValuePairs));
 			} catch (UnsupportedEncodingException e){
@@ -120,7 +120,7 @@ public class CreateMeeting extends Activity {
 
 	    	BasicHttpParams params = new BasicHttpParams();
 	    	params.setParameter("name", name);
-	    	params.setParameter("username", getSharedPreferences(IMReady.PREFERENCES_NAME, MODE_PRIVATE).getString("accountUserName", ""));
+	    	params.setParameter("creator", getSharedPreferences(IMReady.PREFERENCES_NAME, MODE_PRIVATE).getString("accountUserName", ""));
 	    	postRequest.setParams(params);
 	    	new AsyncTask<HttpPost, Void, String>() {
 	    		private Throwable error = null;
