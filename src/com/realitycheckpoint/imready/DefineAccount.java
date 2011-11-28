@@ -1,25 +1,8 @@
 package com.realitycheckpoint.imready;
 
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.ArrayList;
-import java.util.List;
-
-import org.apache.http.HttpResponse;
-import org.apache.http.NameValuePair;
-import org.apache.http.client.entity.UrlEncodedFormEntity;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.message.BasicNameValuePair;
-import org.apache.http.params.BasicHttpParams;
-
 import android.app.Activity;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.net.http.AndroidHttpClient;
-import android.os.AsyncTask;
 import android.os.Bundle;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -27,165 +10,99 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
 
+import com.realitycheckpoint.imready.client.API;
+import com.realitycheckpoint.imready.client.API.Action;
+import com.realitycheckpoint.imready.client.APICallFailedException;
+
 public class DefineAccount extends Activity {
-	
-	public static final int NEW_ACCOUNT      = 0;
-	public static final int EXISTING_ACCOUNT = 1;
-	
-	public static final int ACTIVITY_GOT_ACCOUNT = 0;
-	
-	public void onCreate(Bundle savedInstanceState) {
+
+    public static final int NEW_ACCOUNT = 0;
+    public static final int EXISTING_ACCOUNT = 1;
+    public static final int ACTIVITY_GOT_ACCOUNT = 0;
+    public static final String USERID_PATTERN = "[A-Za-z_0-9]+";
+
+    public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        
+
         /* If an account is already defined, move to meeting creation. */
-        if( getSharedPreferences(IMReady.PREFERENCES_NAME, MODE_PRIVATE).getBoolean("accountDefined", false) ){
-        	startActivityForResult( new Intent(DefineAccount.this, CreateMeeting.class), ACTIVITY_GOT_ACCOUNT);
-        /* Otherwise, create an account */
+        if (getSharedPreferences(IMReady.PREFERENCES_NAME, MODE_PRIVATE).getBoolean("accountDefined", false)) {
+            startActivityForResult(new Intent(DefineAccount.this, CreateMeeting.class), ACTIVITY_GOT_ACCOUNT);
+            /* Otherwise, create an account */
         } else {
-        	setContentView(R.layout.define_account);
+            setContentView(R.layout.define_account);
 
-        	final Button newAccount      = (Button)findViewById(R.id.define_account_new_button);
-        	final Button existingAccount = (Button)findViewById(R.id.define_account_existing_button);
-        	final EditText userName = (EditText)findViewById(R.id.define_account_username);
-        	final EditText nickName = (EditText)findViewById(R.id.define_account_nickname);
+            final Button newAccount = (Button) findViewById(R.id.define_account_new_button);
+            final Button existingAccount = (Button) findViewById(R.id.define_account_existing_button);
+            final EditText userName = (EditText) findViewById(R.id.define_account_username);
+            final EditText nickName = (EditText) findViewById(R.id.define_account_nickname);
 
-        	newAccount.setOnClickListener(new OnClickListener() {
-        		public void onClick(View v) {
-        			createAccount(NEW_ACCOUNT, userName.getText().toString(), nickName.getText().toString());
-        		}
-        	});
-        
-        	existingAccount.setOnClickListener(new OnClickListener() {
-        		public void onClick(View v) {
-        			createAccount(EXISTING_ACCOUNT,  userName.getText().toString(), nickName.getText().toString());
-        		}
-        	});
+            newAccount.setOnClickListener(new OnClickListener() {
+                public void onClick(View v) {
+                    String userId = userName.getText().toString().trim();
+                    if (userId.matches(USERID_PATTERN)) {
+                        createAccount(NEW_ACCOUNT, userId, nickName.getText().toString());
+                    } else {
+                        Toast.makeText(DefineAccount.this, "The username you supplied is invalid, it may only include letters, digits and underscores", Toast.LENGTH_LONG).show();
+                    }
+                }
+            });
+
+            existingAccount.setOnClickListener(new OnClickListener() {
+                public void onClick(View v) {
+                    String userId = userName.getText().toString().trim();
+                    if (userId.matches(USERID_PATTERN)) {
+                        createAccount(EXISTING_ACCOUNT, userId, nickName.getText().toString());
+                    } else {
+                        Toast.makeText(DefineAccount.this, "The username you supplied is invalid, it may only include letters, digits and underscores", Toast.LENGTH_LONG).show();
+                    }
+                }
+            });
         }
-	}
-
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-    	/* If returning after ACTIVITY_GOT_ACCOUNT then just exit this Activity */
-    	if (requestCode == ACTIVITY_GOT_ACCOUNT){
-    		if(resultCode != RESULT_CANCELED){
-    			finish();
-    		}
-    	}
     }
 
-	private void createAccount(int accountType, String username, String nickname){
-		/* Sanity check the user and nick name */
-		/* TODO */
-		
-		/* For a new account, POST username and nickname */
-		URI uri;
-		if (accountType == NEW_ACCOUNT) {
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        /* If returning after ACTIVITY_GOT_ACCOUNT then just exit this Activity */
+        if (requestCode == ACTIVITY_GOT_ACCOUNT) {
+            if (resultCode != RESULT_CANCELED) {
+                finish();
+            }
+        }
+    }
 
-			SharedPreferences.Editor preferences = getSharedPreferences(IMReady.PREFERENCES_NAME, MODE_PRIVATE).edit();
-			preferences.putString("accountUserName", username);
-			preferences.putString("accountNickName", nickname);
-			preferences.commit();
-            
-			final AndroidHttpClient http = AndroidHttpClient.newInstance(IMReady.CLIENT_HTTP_NAME);
-			try {
-				uri = new URI("http://www.monkeysplayingpingpong.co.uk:54321/users");
-			} catch (URISyntaxException  e) {
-				Toast.makeText(DefineAccount.this, "Failed - bad URI: " +e, Toast.LENGTH_LONG).show();
-				return;
-			}
-			
-			HttpPost postRequest = new HttpPost(uri);
+    private void createAccount(final int accountType, final String username, final String nickname) {
+        /* Sanity check the user and nick name */
+        /* TODO */
 
-			List<NameValuePair> nameValuePairs = new ArrayList<NameValuePair>(2);
-			nameValuePairs.add(new BasicNameValuePair("defaultNickname", nickname));
-			nameValuePairs.add(new BasicNameValuePair("id", username));
-			try {
-				postRequest.setEntity(new UrlEncodedFormEntity(nameValuePairs));
-			} catch (UnsupportedEncodingException e){
-				Toast.makeText(DefineAccount.this, "Hmm - not sure I like your account names...\n" + e, Toast.LENGTH_LONG).show();
-			}
+        SharedPreferences.Editor preferences = getSharedPreferences(IMReady.PREFERENCES_NAME, MODE_PRIVATE).edit();
+        preferences.putString("accountUserName", username);
+        preferences.putString("accountNickName", nickname);
+        preferences.commit();
 
-			BasicHttpParams params = new BasicHttpParams();
-			params.setParameter("defaultNickname", nickname);
-			params.setParameter("id", username);
-			postRequest.setParams(params);
-			new AsyncTask<HttpPost, Void, Boolean>() {
-				protected Boolean doInBackground(HttpPost... request) {
-					try {
-						HttpResponse response = http.execute(request[0]);
+        API.performInBackground(new Action<Void>() {
+            @Override
+            public Void action() throws APICallFailedException {
+                if (accountType == NEW_ACCOUNT) {
+                    API.createUser(username, nickname);
+                } else if (accountType == EXISTING_ACCOUNT) {
+                    API.user(username);
+                }
+                return null;
+            }
 
-						/*if( response.getStatusLine().getStatusCode() == 200 ) {
-				    	    	return true;
-			    	    	} else {
-			    	    		return false;
-				            }*/
-						return ( response.getStatusLine().getStatusCode() == 200 );
-					} catch (IOException e) {
-						Toast.makeText(DefineAccount.this, "Hmm - Something went wrong while trying to register your account...\n" + e, Toast.LENGTH_LONG).show();
-					} finally {
-						http.close();
-					}
-					return false;
-				}
-				protected void onPostExecute(Boolean success) {
-					if (success) {
-						SharedPreferences.Editor preferences = getSharedPreferences(IMReady.PREFERENCES_NAME, MODE_PRIVATE).edit();
-						preferences.putBoolean("accountDefined", true);
-						preferences.commit();
+            @Override
+            public void success(Void result) {
+                SharedPreferences.Editor preferences = getSharedPreferences(IMReady.PREFERENCES_NAME, MODE_PRIVATE).edit();
+                preferences.putBoolean("accountDefined", true);
+                preferences.commit();
 
-						/* Now we have an account, we can go to create a meeting */
-						startActivityForResult( new Intent(DefineAccount.this, CreateMeeting.class), ACTIVITY_GOT_ACCOUNT);
-					} else {
-						Toast.makeText(DefineAccount.this, "Hmm - I fear that someone has already bagsied that username.", Toast.LENGTH_LONG).show();
-					}
-				}
-			}.execute(postRequest);
+                /* Now we have an account, we can go to create a meeting */
+                startActivityForResult(new Intent(DefineAccount.this, CreateMeeting.class), ACTIVITY_GOT_ACCOUNT);
+            }
 
-		/* For existing account, GET to check the account is correct */
-		} else if (accountType == EXISTING_ACCOUNT) {
-			
-			SharedPreferences.Editor preferences = getSharedPreferences(IMReady.PREFERENCES_NAME, MODE_PRIVATE).edit();
-			preferences.putString("accountUserName", username);
-			preferences.putString("accountNickName", nickname);
-			preferences.commit();
-
-            final AndroidHttpClient http = AndroidHttpClient.newInstance(IMReady.CLIENT_HTTP_NAME);
-			try {
-				uri = new URI("http://www.monkeysplayingpingpong.co.uk:54321/user/" + username);
-			} catch (URISyntaxException e) {
-				Toast.makeText(DefineAccount.this, "Failed - bad URI: " +e, Toast.LENGTH_LONG).show();
-				return;
-	     	}
-
-			HttpGet getRequest = new HttpGet(uri);
-			new AsyncTask<HttpGet, Void, Boolean>() {
-				protected Boolean doInBackground(HttpGet... request) {
-					try {
-						HttpResponse response = http.execute(request[0]);
-
-						/*if( response.getStatusLine().getStatusCode() == 200 ) {
-							return true;
-						} else {
-							return false;
-						}*/
-						return (response.getStatusLine().getStatusCode() == 200);
-					} catch (IOException e) {
-						Toast.makeText(DefineAccount.this, "Hmm - Something went wrong while trying to recover your account...\n" + e, Toast.LENGTH_LONG).show();
-					}
-					return false;
-				}
-				protected void onPostExecute(Boolean success) {
-					if (success) {
-						SharedPreferences.Editor preferences = getSharedPreferences(IMReady.PREFERENCES_NAME, MODE_PRIVATE).edit();
-						preferences.putBoolean("accountDefined", true);
-						preferences.commit();
-
-						/* Now we have an account, we can go to create a meeting */
-						startActivityForResult( new Intent(DefineAccount.this, CreateMeeting.class), ACTIVITY_GOT_ACCOUNT);
-					} else {
-						Toast.makeText(DefineAccount.this, "Hmm - the server knows not this username of which you speak.", Toast.LENGTH_LONG).show();
-					}
-				}
-			}.execute(getRequest);
-		}
-	}
+            @Override
+            public void failure(APICallFailedException e) {
+                Toast.makeText(DefineAccount.this, "Failed: " + e, Toast.LENGTH_LONG).show();
+            }
+        });
+    }
 }
