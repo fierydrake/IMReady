@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html>
+  <head><title>IMReady REST API</title></head>
+  <body>
+    <h3>REST API</h3>
+    <h4>GET requests</h4>
+    <dl>
+      <dt>GET /user/:uid:
+      <dd>On success, responds with HTTP status code 200 (OK) and a JSON hash
+          with key <code>defaultNickname</code>.
+          <br>On failure, responds with a HTTP status code that is not 200.
+          <p>Failure cases include:
+             <br>User id not found => HTTP 404 (Not Found)
+             <br>Internal error => HTTP 500 (Internal Server Error)
+
+      <dt>GET /meetings
+      <dd>On success, responds with HTTP status code 200 (OK) and a list of 
+          meetings in JSON array, each element of the array is a hash with 
+          keys <code>id</code>, <code>name</code>.
+          <br>On failure, responds with a HTTP status code that is not 200.
+          <p>Failure cases include: 
+             <br>Internal error => HTTP 500 (Internal Server Error)
+
+      <dt>GET /meeting/:mid:
+      <dd>On success, responds with HTTP status code 200 (OK) and the
+          information about the meeting with id <code>:mid:</code> as a JSON 
+          hash with keys <code>id</code>, <code>name</code>, 
+          <code>participants</code>.
+          <br>The value of the participants key should be an array where 
+          each element represents a meeting participant as a hash with keys 
+          <code>id</code> and <code>defaultNickname</code>.
+          <br>On failure, responds with a HTTP status code that is not 200.
+          <p>Failure cases include: 
+             <br>Meeting not found => HTTP 404 (Not Found)
+             <br>Internal error => HTTP 500 (Internal Server Error)
+    </dl>
+
+    <h4>POST requests</h4>
+    <dl>
+      <dt>POST /users
+      <dd>Request should encode form parameters with keys <code>id</code> 
+          <em>(currently this is called <code>username</code>)</em> and 
+          <code>defaultNickname</code> <em>(currently this is called
+          <code>name</code>)</em>.
+          <br>Creates a new user with that id and nick.
+          <br>On success, responds with HTTP status code 200 (OK).
+          <br>On failure, responds with a HTTP status code that is not 200.
+          <em>(Client currently assumes that this means the id is taken.)</em>
+          <p>Failure cases include: 
+             <br>Invalid user id => HTTP 400 (Bad Request)
+             <br>User id already taken => HTTP 400 (Bad Request)
+             <br>Internal error => HTTP 500 (Internal Server Error)
+
+      <dt>POST /meetings
+      <dd>Request should encode form parameters with keys <code>name</code>
+          and <code>creator</code>. The value associated with the creator
+          key is the user id of the creator of the meeting.
+          <br>Creates a new meeting with that name, and adds the creator
+              as a participant of the meeting.
+          <br>On success, responds with HTTP status code 200 (OK) and JSON 
+          hash with key <code>id</code>.
+          <br>On failure, responds with a HTTP status code that is not 200.
+          <p>Failure cases include: 
+             <br>User id not found => HTTP 404 (Not Found)
+             <br>Internal error => HTTP 500 (Internal Server Error)
+    </dl>
+
+    <h4>PUT requests</h4>
+    <dl>
+      <dt>PUT /meeting/:mid:/participants
+      <dd>Request should encode form parameters with key <code>id</code>.
+          <br>Adds the user with the given id as a participant of the meeting 
+          with id <code>:mid:</code>.
+          <br>On success, responds with HTTP status code 200 (OK).
+          <br>On failure, responds with a HTTP status code that is not 200.
+          <p>Failure cases include: 
+             <br>Meeting not found => HTTP 404 (Not Found)
+             <br>User id not found => HTTP 404 (Not Found)
+             <br>Internal error => HTTP 500 (Internal Server Error)
+
+      <dt>PUT /meeting/:mid:/participant/:uid:
+      <dd>Request should encode form parameters with key <code>status</code>
+          with value <code>ready</code>.
+          <br>Sets status of participant with user id <code>:uid:</code> to 
+          ready in meeting with id <code>:mid</code>.
+          <br>On success, responds with HTTP status code 200 (OK).
+          <br>On failure, responds with a HTTP status code that is not 200.
+          <p>Failure cases include: 
+             <br>Meeting not found => HTTP 404 (Not Found)
+             <br>User id not found => HTTP 404 (Not Found)
+             <br>User not a participant of meeting => HTTP 400 (Bad Request)
+             <br>Internal error => HTTP 500 (Internal Server Error)
+    </dl>
+  </body>
+</html>
