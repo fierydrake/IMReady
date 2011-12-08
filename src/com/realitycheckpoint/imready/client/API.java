@@ -15,6 +15,7 @@ import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.message.BasicNameValuePair;
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.json.JSONTokener;
@@ -76,6 +77,54 @@ public class API {
 		}				
 	}
 	
+	public static Meeting meeting(int id) throws APICallFailedException {
+	    final AndroidHttpClient http = AndroidHttpClient.newInstance(IMReady.CLIENT_HTTP_NAME);
+	    try {
+	        URI uri = new URI(SERVER_URI).resolve("meeting/" + id);
+	        HttpGet getRequest = new HttpGet(uri);
+	        HttpResponse response = http.execute(getRequest);
+
+	        int status = response.getStatusLine().getStatusCode();
+	        switch (status) {
+	        case 200: // OK
+	            String body = new BufferedReader(new InputStreamReader(response.getEntity().getContent()), 2048).readLine();
+	            try {
+	                JSONObject meetingJSON = (JSONObject)new JSONTokener(body).nextValue();
+	                ArrayList<Participant> participants = new ArrayList<Participant>();
+	                JSONArray participantsJSON = meetingJSON.getJSONArray("participants");
+	                for (int i=0; i<participantsJSON.length(); i++) {
+	                    JSONObject participantJSON = participantsJSON.getJSONObject(i);
+	                    participants.add(
+	                        new Participant(
+	                            new User(participantJSON.getString("id"), participantJSON.getString("defaultNickname")),
+	                            participantJSON.getString("state"),
+	                            participantJSON.getString("notified")
+	                        )
+	                    );
+	                }
+	                return new Meeting(meetingJSON.getInt("id"), meetingJSON.getString("name"), participants);
+	            } catch (IllegalArgumentException e) {
+	                e.printStackTrace();
+	                throw new APICallFailedException("Server response invalid: " + e, e);
+	            } catch (JSONException e) {
+	                e.printStackTrace();
+	                throw new APICallFailedException("Server response invalid: " + e, e);
+	            }
+	        case 404: throw new APICallFailedException("Meeting with id '" + id + "' not found");
+	        case 500: throw new APICallFailedException("Internal error on server");
+	        default: throw new APICallFailedException("Server returned unknown error: " + status);
+	        }
+	    } catch (URISyntaxException e) {
+	        throw new APICallFailedException("[Internal] Server URI invalid", e);
+	    } catch (UnsupportedEncodingException e) {
+	        throw new APICallFailedException("[Internal] Unsupported character encoding for form values", e);
+	    } catch (IOException e) {
+	        throw new APICallFailedException("Server returned an invalid response", e);
+	    } finally {
+	        http.close();
+	    }
+	}
+
 //	public List<Meeting> meetings() throws APICallFailedException {
 //		return null; 
 //	}
