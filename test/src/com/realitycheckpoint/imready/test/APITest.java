@@ -8,7 +8,6 @@ import com.realitycheckpoint.imready.client.API;
 import com.realitycheckpoint.imready.client.APICallFailedException;
 import com.realitycheckpoint.imready.client.Meeting;
 import com.realitycheckpoint.imready.client.Participant;
-import com.realitycheckpoint.imready.client.User;
 
 public class APITest extends android.test.ActivityInstrumentationTestCase2<CreateMeeting> {
 	private String primaryUserId;
@@ -116,23 +115,33 @@ public class APITest extends android.test.ActivityInstrumentationTestCase2<Creat
 					found = participant;
 				}
 			}
-			assertNotNull("After adding participant they should be in the meeting", found);
+			assertNotNull("After adding participant they should in the meeting", found);
 			assertEquals("Mr Test B", found.getUser().getDefaultNickname());
 			assertEquals(secondaryUserId, found.getUser().getId());
-			assertEquals("After being added, a participant should be marked as NOT NOTIFIED", false, found.getNotified());
-			assertEquals("After being added, a participant should be NOT READY", Participant.STATE_NOT_READY, found.getState());
+			assertEquals("After being added to a meeting, a participant should be marked as NOT NOTIFIED", false, found.getNotified());
+			assertEquals("After being added to a meeting, a participant should be NOT READY", Participant.STATE_NOT_READY, found.getState());
 		} catch (APICallFailedException e) {
 			e.printStackTrace();
 			fail("Failed to read meeting with id '" + meetingId + "': " + e);			
 		}
 
-//		try {
-//			API.userMeetings(secondaryUserId);
-			/* -- Check the user is in the meeting */
-//		} catch (APICallFailedException e) {
-//			e.printStackTrace();
-//			fail("Failed to read meeting with id '" + meetingId + "': " + e);			
-//		}
+		try {
+			List<Meeting> meetings = API.userMeetings(secondaryUserId);
+			assertEquals("After being added to a meeting, a user should have a meeting in their meeting list", 1, meetings.size());
+			
+			Meeting found = null;
+			for (Meeting meeting : meetings) {
+				if (meetingId == meeting.getId()) {
+					found = meeting;
+				}
+			}
+			assertNotNull("After being added to a meeting, the meeting should appear in the user's meeting list", found);
+			assertEquals(meetingId, found.getId());
+			assertEquals("Test Meeting", found.getName());
+		} catch (APICallFailedException e) {
+			e.printStackTrace();
+			fail("Failed to read meeting with id '" + meetingId + "': " + e);			
+		}
 	}
 	
 

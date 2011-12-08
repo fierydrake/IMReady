@@ -11,7 +11,9 @@ public class Meeting {
     public Meeting(int id, String name, List<Participant> participants) {
         this.id = id;
         this.name = name;
-        this.participants = Collections.unmodifiableList(participants);
+        if (participants != null) {
+        	this.participants = Collections.unmodifiableList(participants);
+        }
     }
 
     public int getId() { return id; }
