@@ -1,10 +1,14 @@
 package com.realitycheckpoint.imready.test;
 
+import java.util.List;
 import java.util.UUID;
 
 import com.realitycheckpoint.imready.CreateMeeting;
 import com.realitycheckpoint.imready.client.API;
 import com.realitycheckpoint.imready.client.APICallFailedException;
+import com.realitycheckpoint.imready.client.Meeting;
+import com.realitycheckpoint.imready.client.Participant;
+import com.realitycheckpoint.imready.client.User;
 
 public class APITest extends android.test.ActivityInstrumentationTestCase2<CreateMeeting> {
 	private String primaryUserId;
@@ -61,19 +65,74 @@ public class APITest extends android.test.ActivityInstrumentationTestCase2<Creat
 			fail("Failed to create user: " + e);
 		}
 		
+		int meetingId = 0;
 		try {
-			int meetingId = API.createMeeting(primaryUserId, "Test Meeting");
+			meetingId = API.createMeeting(primaryUserId, "Test Meeting");
 			assertTrue("Creating a meeting should return a valid meeting id (meetingId=" + meetingId + ")", meetingId > 0);
-			API.meeting(meetingId);
-//			API.addMeetingParticipant(meetingId, secondaryUserId);
-//			API.meetingParticipants(meetingId);
-			/* -- Check the paticipant was added */
-//			API.userMeetings(secondaryUserId);
-			/* -- Check the user is in the meeting */
 		} catch (APICallFailedException e) {
 			e.printStackTrace();
-			fail("Failed to create meeting: " + e);			
+			fail("Failed to create meeting: " + e);
 		}
+		
+		try {
+			Meeting meeting = API.meeting(meetingId);
+			
+			assertEquals("Test Meeting", meeting.getName());
+			assertEquals(meetingId, meeting.getId());
+			
+			// Simple search for now, should implement User.equals() & hashCode()
+			Participant found = null;
+			List<Participant> participants = meeting.getParticipants();
+			for (Participant participant : participants) {
+				if (primaryUserId.equals(participant.getUser().getId())) {
+					found = participant;
+				}
+			}
+			assertNotNull("Meeting creator should be a participant of meeting", found);
+			assertEquals("Mr Test A", found.getUser().getDefaultNickname());
+			assertEquals(primaryUserId, found.getUser().getId());
+			assertEquals("Meeting creator should be marked as NOTIFIED after meeting creator", true, found.getNotified());
+			assertEquals("Meeting creator should be NOT READY after meeting creation", Participant.STATE_NOT_READY, found.getState());
+		} catch (APICallFailedException e) {
+			e.printStackTrace();
+			fail("Failed to read meeting with id '" + meetingId + "': " + e);			
+		}
+		
+		try {
+			API.addMeetingParticipant(meetingId, secondaryUserId);
+		} catch (APICallFailedException e) {
+			e.printStackTrace();
+			fail("Failed to add participant to meeting with id '" + meetingId + "': " + e);			
+		}
+
+		try {
+			Meeting meeting = API.meeting(meetingId);
+
+			// Simple search for now, should implement User.equals() & hashCode()
+			Participant found = null;
+			List<Participant> participants = meeting.getParticipants();
+			for (Participant participant : participants) {
+				if (secondaryUserId.equals(participant.getUser().getId())) {
+					found = participant;
+				}
+			}
+			assertNotNull("After adding participant they should be in the meeting", found);
+			assertEquals("Mr Test B", found.getUser().getDefaultNickname());
+			assertEquals(secondaryUserId, found.getUser().getId());
+			assertEquals("After being added, a participant should be marked as NOT NOTIFIED", false, found.getNotified());
+			assertEquals("After being added, a participant should be NOT READY", Participant.STATE_NOT_READY, found.getState());
+		} catch (APICallFailedException e) {
+			e.printStackTrace();
+			fail("Failed to read meeting with id '" + meetingId + "': " + e);			
+		}
+
+//		try {
+//			API.userMeetings(secondaryUserId);
+			/* -- Check the user is in the meeting */
+//		} catch (APICallFailedException e) {
+//			e.printStackTrace();
+//			fail("Failed to read meeting with id '" + meetingId + "': " + e);			
+//		}
 	}
 	
 

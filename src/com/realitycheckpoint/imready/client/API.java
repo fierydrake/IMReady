@@ -14,6 +14,7 @@ import org.apache.http.NameValuePair;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.client.methods.HttpPut;
 import org.apache.http.message.BasicNameValuePair;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -125,11 +126,11 @@ public class API {
 	    }
 	}
 
-//	public List<Meeting> meetings() throws APICallFailedException {
-//		return null; 
-//	}
-//	
-//	public List<Participant> meetingParticipants(int meetingId) throws APICallFailedException { 
+	public static List<Meeting> userMeetings() throws APICallFailedException {
+		return null; 
+	}
+	
+//	public static List<Participant> meetingParticipants(int meetingId) throws APICallFailedException { 
 //		return null; 
 //	}
 	
@@ -206,9 +207,35 @@ public class API {
 	}
 	
 	// PUT
-	public void addMeetingParticipant(int meetingId, String userId) throws APICallFailedException {
+	public static void addMeetingParticipant(int meetingId, String userId) throws APICallFailedException {
+    	final AndroidHttpClient http = AndroidHttpClient.newInstance(IMReady.CLIENT_HTTP_NAME);
+		try {
+			URI uri = new URI(SERVER_URI).resolve("meeting/" + meetingId + "/participants");
+	    	HttpPut putRequest = new HttpPut(uri);
+	    	
+	    	List<NameValuePair> nameValuePairs = new ArrayList<NameValuePair>(1);
+			nameValuePairs.add(new BasicNameValuePair("id", userId));
+			putRequest.setEntity(new UrlEncodedFormEntity(nameValuePairs));
+	    	HttpResponse response = http.execute(putRequest);
+
+	    	int status = response.getStatusLine().getStatusCode();
+	    	switch (status) {
+	    	case 200: return; // OK
+	    	case 404: throw new APICallFailedException("Meeting or user id not found ('" + meetingId + "', '" + userId + "')"); // TODO Detect which is not found
+	    	case 500: throw new APICallFailedException("Internal error on server");
+	    	default: throw new APICallFailedException("Server returned unknown error: " + status);
+	    	}
+		} catch (URISyntaxException e) {
+			throw new APICallFailedException("[Internal] Server URI invalid", e);
+		} catch (UnsupportedEncodingException e) {
+			throw new APICallFailedException("[Internal] Unsupported character encoding for form values", e);
+	   	} catch (IOException e) {
+	   		throw new APICallFailedException("Server returned an invalid response", e);
+    	} finally {
+			http.close();
+		}
 	}
 	
-	public void ready(int meetingId) throws APICallFailedException {
+	public static void ready(int meetingId) throws APICallFailedException {
 	}
 }
