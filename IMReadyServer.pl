@@ -47,7 +47,11 @@ sub main{
                     } elsif ( $request->uri->path eq '/meetings' ) {
                         debug('Return meetings');
                         returnMeetings($connection);
-                    } elsif ($request->uri->path =~ /^\/meeting\/(\d+)$/ ) {
+                    } elsif ( $request->uri->path =~ /^\/meetings\/($unamePattern)$/ ) {
+                        my $username = $1;
+                        debug('Return meetings for user <' . $username . '>');
+                        returnUserMeetings($connection, $username);
+                    } elsif ( $request->uri->path =~ /^\/meeting\/(\d+)$/ ) {
                         my $meeting = $1;
                         debug('Return meeting <' . $meeting . '>');
                         returnMeeting($connection, $meeting);
@@ -99,7 +103,49 @@ sub returnMeetings {
 
     # If there are meetings defined, build a JSON array, else, return an array of null.
     my @meetings = $redis->smembers("util:list:meetings");
-    if( scalar @meetings > 0 ){
+    if( defined $meetings[0] ){
+        $content  = "[";
+        foreach my $meeting (sort @meetings){
+            $content .= "{\"id\": \"" . $meeting . "\", \"name\": \"" . $redis->get("meeting:$meeting:name") . "\"},";
+        }
+        chop $content;
+        $content .= "]";
+    } else {
+        $content  = "[]";
+    }
+    $redis->quit;
+
+    my $hdr     = HTTP::Headers->new(Content_Type => 'application/json',
+                                     Connection   => 'close');
+    my $resp = HTTP::Response->new(RC_OK, "", $hdr, $content);
+    $conn->send_response($resp);
+}
+
+sub returnUserMeetings {
+    my $conn = shift;
+    my $id   = shift;
+
+    my $content;
+
+    my $exists = userExists($id);
+    if ( $exists == 0 ) {
+        $conn->send_error(404, "User id not found");
+        return;
+    } elsif ( $exists == -1 ) {
+        $conn->send_error(500, "Internal error");
+        return;
+    }
+
+    my $redis;
+    unless ( $redis = Redis->new( server => 'localhost:6379', encoding => undef ) ) {
+        debug('Failed to connect to Redis');
+        $conn->send_error(500, 'Internal error');
+        return;
+    }
+
+    # If there are meetings for this user, build a JSON array, else, return an array of null.
+    my @meetings = $redis->smembers("user:$id:meetings");
+    if( defined $meetings[0] ){
         $content  = "[";
         foreach my $meeting (sort @meetings){
             $content .= "{\"id\": \"" . $meeting . "\", \"name\": \"" . $redis->get("meeting:$meeting:name") . "\"},";
@@ -192,8 +238,8 @@ sub createMeeting {
     $redis->sadd("meeting:$meeting:participants" => $id);
     $redis->set("meeting:$meeting:$id:state" => 0);
     $redis->set("meeting:$meeting:$id:notified" => 1);
-    $redis->sadd("util:list:meetings" => $id);
-    $redis->sadd("user:$id:meetings" => $id);
+    $redis->sadd("util:list:meetings" => $meeting);
+    $redis->sadd("user:$id:meetings" => $meeting);
     $redis->quit;
 
     my $hdr     = HTTP::Headers->new(Content_Type => 'application/json',

@@ -21,6 +21,16 @@
           <p>Failure cases include: 
              <br>Internal error => HTTP 500 (Internal Server Error)
 
+      <dt>GET /meetings/:uid:
+      <dd>On success, responds with HTTP status code 200 (OK) and a list of
+          meetings that user :uid: is a participant in as a JSON array, each
+          element of the array is a hash with keys <code>id</code>, 
+          <code>name</code>.
+          <br>On failure, responds with a HTTP status code that is not 200.
+          <p>Failure cases include: 
+             <br>User id not found => HTTP 404 (Not Found)
+             <br>Internal error => HTTP 500 (Internal Server Error)
+
       <dt>GET /meeting/:mid:
       <dd>On success, responds with HTTP status code 200 (OK) and the
           information about the meeting with id <code>:mid:</code> as a JSON 
