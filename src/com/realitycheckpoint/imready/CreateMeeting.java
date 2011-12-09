@@ -89,11 +89,12 @@ public class CreateMeeting extends Activity {
 
     private void createMeeting(final String name) {
         final String creatorId = getSharedPreferences(IMReady.PREFERENCES_NAME, MODE_PRIVATE).getString("accountUserName", "");
+        final API api = new API(creatorId);
 
         API.performInBackground(new API.Action<Integer>() {
             @Override
             public Integer action() throws APICallFailedException {
-                return API.createMeeting(creatorId, name);
+                return api.createMeeting(creatorId, name);
             }
             @Override
             public void success(Integer meetingId) {

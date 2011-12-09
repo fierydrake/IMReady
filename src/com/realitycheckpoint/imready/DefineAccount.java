@@ -72,6 +72,7 @@ public class DefineAccount extends Activity {
     private void createAccount(final int accountType, final String username, final String nickname) {
         /* Sanity check the user and nick name */
         /* TODO */
+    	final API api = new API(username);
 
         SharedPreferences.Editor preferences = getSharedPreferences(IMReady.PREFERENCES_NAME, MODE_PRIVATE).edit();
         preferences.putString("accountUserName", username);
@@ -82,9 +83,9 @@ public class DefineAccount extends Activity {
             @Override
             public Void action() throws APICallFailedException {
                 if (accountType == NEW_ACCOUNT) {
-                    API.createUser(username, nickname);
+                    api.createUser(username, nickname);
                 } else if (accountType == EXISTING_ACCOUNT) {
-                    API.user(username);
+                    api.user(username);
                 }
                 return null;
             }

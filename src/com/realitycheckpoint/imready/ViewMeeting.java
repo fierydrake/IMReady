@@ -46,12 +46,14 @@ public class ViewMeeting extends ListActivity {
 
         String userNickName = getSharedPreferences(IMReady.PREFERENCES_NAME, MODE_PRIVATE).getString("accountNickName", "");
         String userName = getSharedPreferences(IMReady.PREFERENCES_NAME, MODE_PRIVATE).getString("accountUserName", "");
+        
+        final API api = new API(userName);
 
         initialiseActivityFromLocalKnowledge(meetingName, meetingId, userNickName, userName);
         API.performInBackground(new Action<Meeting>() {
             @Override
             public Meeting action() throws APICallFailedException {
-                return API.meeting(meetingId);
+                return api.meeting(meetingId);
             }
             @Override
             public void success(Meeting meeting) {

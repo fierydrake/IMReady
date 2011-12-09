@@ -10,6 +10,7 @@ import com.realitycheckpoint.imready.client.Meeting;
 import com.realitycheckpoint.imready.client.Participant;
 
 public class APITest extends android.test.ActivityInstrumentationTestCase2<CreateMeeting> {
+	private API api;
 	private String primaryUserId;
 	private String secondaryUserId;
 
@@ -21,6 +22,8 @@ public class APITest extends android.test.ActivityInstrumentationTestCase2<Creat
 		String suffix = UUID.randomUUID().toString().replaceAll("-", "_");
 		primaryUserId = "testuserA_" + suffix;
 		secondaryUserId = "testuserB_" + suffix;
+		
+		api = new API(primaryUserId);
 	}
 	
 	public void testUserResource() {
@@ -28,7 +31,7 @@ public class APITest extends android.test.ActivityInstrumentationTestCase2<Creat
 		 * Create a new user
 		 */
 		try {
-			API.createUser(primaryUserId, "Mr Test");
+			api.createUser(primaryUserId, "Mr Test");
 		} catch (APICallFailedException e) {
 			e.printStackTrace();
 			fail("Failed to create user: " + e);
@@ -38,7 +41,7 @@ public class APITest extends android.test.ActivityInstrumentationTestCase2<Creat
 		 * Test that the user now exists
 		 */
 		try {
-			API.user(primaryUserId);
+			api.user(primaryUserId);
 		} catch (APICallFailedException e) {
 			e.printStackTrace();
 			fail("Failed to retrieve user: " + e);
@@ -48,7 +51,7 @@ public class APITest extends android.test.ActivityInstrumentationTestCase2<Creat
 		 * Test that the user we didn't create fails
 		 */
 		try {
-			API.user(secondaryUserId);
+			api.user(secondaryUserId);
 			fail("User '" + secondaryUserId + "' should not exist");
 		} catch (APICallFailedException e) {
 			assertTrue("User should not be found", e.getMessage().contains("not found"));
@@ -57,8 +60,8 @@ public class APITest extends android.test.ActivityInstrumentationTestCase2<Creat
 	
 	public void testMeetingResource() {
 		try {
-			API.createUser(primaryUserId, "Mr Test A");
-			API.createUser(secondaryUserId, "Mr Test B");
+			api.createUser(primaryUserId, "Mr Test A");
+			api.createUser(secondaryUserId, "Mr Test B");
 		} catch (APICallFailedException e) {
 			e.printStackTrace();
 			fail("Failed to create user: " + e);
@@ -66,7 +69,7 @@ public class APITest extends android.test.ActivityInstrumentationTestCase2<Creat
 		
 		int meetingId = 0;
 		try {
-			meetingId = API.createMeeting(primaryUserId, "Test Meeting");
+			meetingId = api.createMeeting(primaryUserId, "Test Meeting");
 			assertTrue("Creating a meeting should return a valid meeting id (meetingId=" + meetingId + ")", meetingId > 0);
 		} catch (APICallFailedException e) {
 			e.printStackTrace();
@@ -74,7 +77,7 @@ public class APITest extends android.test.ActivityInstrumentationTestCase2<Creat
 		}
 		
 		try {
-			Meeting meeting = API.meeting(meetingId);
+			Meeting meeting = api.meeting(meetingId);
 			
 			assertEquals("Test Meeting", meeting.getName());
 			assertEquals(meetingId, meeting.getId());
@@ -98,14 +101,14 @@ public class APITest extends android.test.ActivityInstrumentationTestCase2<Creat
 		}
 		
 		try {
-			API.addMeetingParticipant(meetingId, secondaryUserId);
+			api.addMeetingParticipant(meetingId, secondaryUserId);
 		} catch (APICallFailedException e) {
 			e.printStackTrace();
 			fail("Failed to add participant to meeting with id '" + meetingId + "': " + e);			
 		}
 
 		try {
-			Meeting meeting = API.meeting(meetingId);
+			Meeting meeting = api.meeting(meetingId);
 
 			// Simple search for now, should implement User.equals() & hashCode()
 			Participant found = null;
@@ -126,7 +129,7 @@ public class APITest extends android.test.ActivityInstrumentationTestCase2<Creat
 		}
 
 		try {
-			List<Meeting> meetings = API.userMeetings(secondaryUserId);
+			List<Meeting> meetings = api.userMeetings(secondaryUserId);
 			assertEquals("After being added to a meeting, a user should have a meeting in their meeting list", 1, meetings.size());
 			
 			Meeting found = null;
@@ -143,25 +146,6 @@ public class APITest extends android.test.ActivityInstrumentationTestCase2<Creat
 			fail("Failed to read meeting with id '" + meetingId + "': " + e);			
 		}
 	}
-	
-
-//	public void testAddMeetingParticipant() {
-//		try {
-//			int meetingId = API.createMeeting("mjt", "My Test Meeting");
-//			API.addMeetingParticipant(meetingId, "mjt");
-//			List<Participant> participants = API.meetingParticipants(meetingId);
-//			boolean found = false;
-//			for (Participant p : participants) {
-//				if (p.getUser().equals(me)) {
-//					found = true;
-//					break;
-//				}
-//			}
-//			assertTrue("After adding participant to meeting, they should appear in the participant list", found);
-//		} catch (APICallFailedException e) {
-//			fail("API call failed: " + e);
-//		}
-//	}
 
 //	public void testReady() {
 //		try {

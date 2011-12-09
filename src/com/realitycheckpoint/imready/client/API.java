@@ -52,12 +52,20 @@ public class API {
 	
 	private static final String SERVER_URI = "http://www.monkeysplayingpingpong.co.uk:54321/"; 
 	
+	private String requestingUserId;
+	
+	public API(String requestingUserId) {
+		this.requestingUserId = requestingUserId;
+	}
+	public String getRequestingUserId() { return requestingUserId; }
+	
 	// GET
-	public static void user(String id) throws APICallFailedException {
+	public void user(String id) throws APICallFailedException {
     	final AndroidHttpClient http = AndroidHttpClient.newInstance(IMReady.CLIENT_HTTP_NAME);
 		try {
 			URI uri = new URI(SERVER_URI).resolve("user/" + id);
 	    	HttpGet getRequest = new HttpGet(uri);
+	    	getRequest.addHeader("X-IMReady-Auth-ID", getRequestingUserId());
 	    	HttpResponse response = http.execute(getRequest);
 
 	    	int status = response.getStatusLine().getStatusCode();
@@ -78,11 +86,12 @@ public class API {
 		}				
 	}
 	
-	public static Meeting meeting(int id) throws APICallFailedException {
+	public Meeting meeting(int id) throws APICallFailedException {
 	    final AndroidHttpClient http = AndroidHttpClient.newInstance(IMReady.CLIENT_HTTP_NAME);
 	    try {
 	        URI uri = new URI(SERVER_URI).resolve("meeting/" + id);
 	        HttpGet getRequest = new HttpGet(uri);
+	        getRequest.addHeader("X-IMReady-Auth-ID", getRequestingUserId());
 	        HttpResponse response = http.execute(getRequest);
 
 	        int status = response.getStatusLine().getStatusCode();
@@ -126,11 +135,12 @@ public class API {
 	    }
 	}
 
-	public static List<Meeting> userMeetings(String userId) throws APICallFailedException {
+	public List<Meeting> userMeetings(String userId) throws APICallFailedException {
 	    final AndroidHttpClient http = AndroidHttpClient.newInstance(IMReady.CLIENT_HTTP_NAME);
 	    try {
 	        URI uri = new URI(SERVER_URI).resolve("meetings/" + userId);
 	        HttpGet getRequest = new HttpGet(uri);
+	        getRequest.addHeader("X-IMReady-Auth-ID", getRequestingUserId());
 	        HttpResponse response = http.execute(getRequest);
 
 	        int status = response.getStatusLine().getStatusCode();
@@ -180,16 +190,17 @@ public class API {
 	    }
 	}
 	
-//	public static List<Participant> meetingParticipants(int meetingId) throws APICallFailedException { 
+//	public List<Participant> meetingParticipants(int meetingId) throws APICallFailedException { 
 //		return null; 
 //	}
 	
 	// POST
-	public static void createUser(String id, String defaultNickname) throws APICallFailedException {
+	public void createUser(String id, String defaultNickname) throws APICallFailedException {
     	final AndroidHttpClient http = AndroidHttpClient.newInstance(IMReady.CLIENT_HTTP_NAME);
 		try {
 			URI uri = new URI(SERVER_URI).resolve("users");
 	    	HttpPost postRequest = new HttpPost(uri);
+	    	postRequest.addHeader("X-IMReady-Auth-ID", getRequestingUserId());
 	    	List<NameValuePair> nameValuePairs = new ArrayList<NameValuePair>(2);
 			nameValuePairs.add(new BasicNameValuePair("id", id));
 			nameValuePairs.add(new BasicNameValuePair("defaultNickname", defaultNickname));
@@ -215,13 +226,14 @@ public class API {
 		}		
 	}
 	
-	public static int createMeeting(String creatorId, String name) throws APICallFailedException {
+	public int createMeeting(String creatorId, String name) throws APICallFailedException {
     	final AndroidHttpClient http = AndroidHttpClient.newInstance(IMReady.CLIENT_HTTP_NAME);
     	String body = null;
     	String id = null;
 		try {
 			URI uri = new URI(SERVER_URI).resolve("meetings");
 	    	HttpPost postRequest = new HttpPost(uri);
+	    	postRequest.addHeader("X-IMReady-Auth-ID", getRequestingUserId());
 	    	
 	    	List<NameValuePair> nameValuePairs = new ArrayList<NameValuePair>(2);
 			nameValuePairs.add(new BasicNameValuePair("creator", creatorId));
@@ -257,11 +269,12 @@ public class API {
 	}
 	
 	// PUT
-	public static void addMeetingParticipant(int meetingId, String userId) throws APICallFailedException {
+	public void addMeetingParticipant(int meetingId, String userId) throws APICallFailedException {
     	final AndroidHttpClient http = AndroidHttpClient.newInstance(IMReady.CLIENT_HTTP_NAME);
 		try {
 			URI uri = new URI(SERVER_URI).resolve("meeting/" + meetingId + "/participants");
 	    	HttpPut putRequest = new HttpPut(uri);
+	    	putRequest.addHeader("X-IMReady-Auth-ID", getRequestingUserId());
 	    	
 	    	List<NameValuePair> nameValuePairs = new ArrayList<NameValuePair>(1);
 			nameValuePairs.add(new BasicNameValuePair("id", userId));
@@ -286,6 +299,6 @@ public class API {
 		}
 	}
 	
-	public static void ready(int meetingId) throws APICallFailedException {
+	public void ready(int meetingId) throws APICallFailedException {
 	}
 }
