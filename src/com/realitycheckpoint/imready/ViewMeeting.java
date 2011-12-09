@@ -25,7 +25,7 @@ public class ViewMeeting extends ListActivity {
     private String[] from = new String[] { "name", "readiness" };
     private int[] to = new int[] { R.id.meeting_participant_list_item_name,  
             R.id.meeting_participant_list_item_readiness };
-    private SimpleAdapter adapter = new SimpleAdapter(this, participants, R.layout.meeting_participant_list_item, from, to);
+    private SimpleAdapter adapter; 
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -49,6 +49,7 @@ public class ViewMeeting extends ListActivity {
         
         final API api = new API(userName);
 
+        adapter = new SimpleAdapter(this, participants, R.layout.meeting_participant_list_item, from, to);
         initialiseActivityFromLocalKnowledge(meetingName, meetingId, userNickName, userName);
         API.performInBackground(new Action<Meeting>() {
             @Override
@@ -103,7 +104,7 @@ public class ViewMeeting extends ListActivity {
 
     private void addParticipant(String nick, String id, boolean readiness) {
         HashMap<String, Object> userItem = new HashMap<String, Object>();
-        userItem.put("name", nick + "(" + id + ")");
+        userItem.put("name", nick + " (" + id + ")");
         userItem.put("readiness", readiness);
         participants.add(userItem);
     }
