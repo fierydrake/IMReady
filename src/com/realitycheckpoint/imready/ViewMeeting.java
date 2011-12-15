@@ -63,8 +63,6 @@ public class ViewMeeting extends ListActivity {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        setContentView(R.layout.view_meeting);
-        
         Uri internalMeetingUri = getIntent().getData();
 
         if (!"content".equals(internalMeetingUri.getScheme())) { return; } // TODO Error handling
@@ -96,29 +94,30 @@ public class ViewMeeting extends ListActivity {
                 return false;
             }
         });
-        setListAdapter(adapter);
         
-        //getListView().addFooterView(findViewById(R.id.view_meeting_add_participant_button));
-        final Button addParticipant = (Button) findViewById(R.id.view_meeting_add_participant_button);
+        final Button addParticipant = (Button)getLayoutInflater().inflate(R.layout.view_meeting_add_participant_button, null);
         addParticipant.setOnClickListener(new OnClickListener() {
-            public void onClick(View v) {
-            	API.performInBackground(new Action<Void>() {
-					@Override
-					public Void action() throws APICallFailedException {
-						api.addMeetingParticipant(meetingId, "monkeysppp");
-						return null;
-					}
-					@Override
-					public void success(Void result) {
-						API.performInBackground(new RefreshMeetingDetailsAction(api, meetingId));
-					}
-					@Override
-					public void failure(APICallFailedException e) {
-			            Toast.makeText(ViewMeeting.this, "Failed: " + e, Toast.LENGTH_LONG).show();
-					}
-            	});
-            }
+        	public void onClick(View v) {
+        		API.performInBackground(new Action<Void>() {
+        			@Override
+        			public Void action() throws APICallFailedException {
+        				api.addMeetingParticipant(meetingId, "monkeysppp");
+        				return null;
+        			}
+        			@Override
+        			public void success(Void result) {
+        				API.performInBackground(new RefreshMeetingDetailsAction(api, meetingId));
+        			}
+        			@Override
+        			public void failure(APICallFailedException e) {
+        				Toast.makeText(ViewMeeting.this, "Failed: " + e, Toast.LENGTH_LONG).show();
+        			}
+        		});
+        	}
         });
+        getListView().addFooterView(addParticipant);
+        
+        setListAdapter(adapter);
     }
 
     private void initialiseActivityFromLocalKnowledge(String meetingName, int meetingId, String creatorNick, String creatorUserId) {
