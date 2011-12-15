@@ -4,4 +4,6 @@ public class IMReady {
 	public static final String PREFERENCES_NAME = "IMReadyPrefs";
 	
 	public static final String CLIENT_HTTP_NAME = "Android ImReady 0.1";
+	
+	public static final String ACTIONS_ACOUNT_CHANGE_DETAILS = "accountDetailsChange";
 }

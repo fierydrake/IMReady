@@ -101,6 +101,13 @@ sub returnUser {
     my $id   = shift;
     debug('Look-up user <' . $id . '>');
 
+    my $valid = userValid($id);
+    if ( $valid == 0 ) {
+        debug('Invalid user id <' . $id . '>');
+        $conn->send_error(500, "Internal Error");
+        return;
+    }
+
     if( userExists( $id ) ) {
         my $content = "{\"username\":\"" . $id . "\", \"name\":\"" . getNickname($id) . "\"}";
 
@@ -229,26 +236,9 @@ sub returnMeeting {
     my $req     = shift;
     my $meeting = shift;
 
-    my $requestingUserID = $req->header('X-IMReady-Auth-ID');
-    if( $requestingUserID ) {
-        debug('Request came from user <' . $requestingUserID . '>' );
-
-        my $valid = userValid($requestingUserID);
-        if ( $valid == 0 ) {
-            debug('Invalid user id <' . $requestingUserID . '>');
-            $conn->send_error(500, "Internal Error");
-            return;
-        }
-
-        my $exists = userExists($requestingUserID);
-        if ( $exists == 0 ) {
-            debug('User id <' . $requestingUserID . '> not found');
-            $conn->send_error(404, "User id not found");
-            return;
-        } elsif ( $exists == -1 ) {
-            $conn->send_error(500, "Internal error");
-            return;
-        }
+    my $requestingUserID = getRequestingUseID($conn, $req);
+    if ( $requestingUserID == -1 ) {
+        return;
     }
 
     my $redis;
@@ -500,13 +490,47 @@ sub setParticipantStatus {
     $conn->send_response($resp);
 }
 
+# Return the userID of the user making this request.
+# Check for an X-IMReady-Auth-ID header
+# Return -1 on an error.
+sub getRequestingUseID {
+    my $conn = shift;
+    my $req  = shift;
+
+    my $requestingUserID = $req->header('X-IMReady-Auth-ID');
+    if( $requestingUserID ) {
+        debug('Request came from user <' . $requestingUserID . '>' );
+
+        my $valid = userValid($requestingUserID);
+        if ( $valid == 0 ) {
+            debug('Invalid user id <' . $requestingUserID . '>');
+            $conn->send_error(500, "Internal Error");
+            return -1;
+        }
+
+        my $exists = userExists($requestingUserID);
+        if ( $exists == 0 ) {
+            debug('User id <' . $requestingUserID . '> not found');
+            $conn->send_error(404, "User id not found");
+            return -1;
+        } elsif ( $exists == -1 ) {
+            $conn->send_error(500, "Internal error");
+            return -1;
+        } else {
+            return $requestingUserID;
+        }
+    } else {
+        return;
+    }
+}
+
 # Check if a user is valid
 # Return 1 for valid
 #        0 for invalid
 sub userValid {
     my $id = shift;
 
-    if ( $id =~ /$unamePattern/ ) {
+    if ( $id =~ /^$unamePattern$/ ) {
         return 1;
     }
     return 0;

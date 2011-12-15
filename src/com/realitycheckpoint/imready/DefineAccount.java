@@ -1,8 +1,12 @@
 package com.realitycheckpoint.imready;
 
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 import android.app.Activity;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.net.Uri;
 import android.os.Bundle;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -23,9 +27,30 @@ public class DefineAccount extends Activity {
 
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        
+        boolean changeAccount = false;
 
-        /* If an account is already defined, move to meeting creation. */
-        if (getSharedPreferences(IMReady.PREFERENCES_NAME, MODE_PRIVATE).getBoolean("accountDefined", false)) {
+        Uri accountDetailsAction = getIntent().getData();
+        if ( accountDetailsAction != null &&
+        	 "content".equals( accountDetailsAction.getScheme() ) &&
+             accountDetailsAction.getEncodedPath().startsWith("/util")) {
+
+        	String accountAction = accountDetailsAction.getEncodedPath();
+        	Pattern p = Pattern.compile("/util/(.*)");
+        	Matcher m = p.matcher(accountAction);
+        	if (m.matches()) {
+
+        		String actionName = Uri.decode(m.group(1));
+
+        		/* If we're launched to change the account details */
+        		if ( actionName.equalsIgnoreCase(IMReady.ACTIONS_ACOUNT_CHANGE_DETAILS) ) {
+        			changeAccount = true;
+        		}
+        	}
+        }
+        
+        /* Otherwise, we're launched from new.  If an account is already defined, move to meeting creation. */
+        if ( !changeAccount && getSharedPreferences(IMReady.PREFERENCES_NAME, MODE_PRIVATE).getBoolean("accountDefined", false)) {
             startActivityForResult(new Intent(DefineAccount.this, CreateMeeting.class), ACTIVITY_GOT_ACCOUNT);
             /* Otherwise, create an account */
         } else {
@@ -35,6 +60,11 @@ public class DefineAccount extends Activity {
             final Button existingAccount = (Button) findViewById(R.id.define_account_existing_button);
             final EditText userName = (EditText) findViewById(R.id.define_account_username);
             final EditText nickName = (EditText) findViewById(R.id.define_account_nickname);
+            
+            if ( changeAccount && getSharedPreferences(IMReady.PREFERENCES_NAME, MODE_PRIVATE).getBoolean("accountDefined", false) ){
+            	userName.setText( getSharedPreferences(IMReady.PREFERENCES_NAME, MODE_PRIVATE).getString("accountUserName", "") );
+            	nickName.setText( getSharedPreferences(IMReady.PREFERENCES_NAME, MODE_PRIVATE).getString("accountNickName", "") );
+            }
 
             newAccount.setOnClickListener(new OnClickListener() {
                 public void onClick(View v) {
