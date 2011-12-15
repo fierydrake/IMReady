@@ -68,7 +68,10 @@ public class CreateMeeting extends Activity {
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
         case R.id.menu_account:
-         Toast.makeText(CreateMeeting.this, "TODO", Toast.LENGTH_SHORT).show();
+            // Open the accounts page and blank the "history"
+            Uri resetAccountDetails = Uri.parse("content://com.realitycheckpoint.imready/util/" + IMReady.ACTIONS_ACOUNT_CHANGE_DETAILS);
+            startActivity(new Intent(Intent.ACTION_VIEW, resetAccountDetails, CreateMeeting.this, DefineAccount.class));
+            finish();
             return true;
         case R.id.menu_blank:
             SharedPreferences.Editor preferences = getSharedPreferences(IMReady.PREFERENCES_NAME, MODE_PRIVATE).edit();
