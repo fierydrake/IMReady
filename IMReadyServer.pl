@@ -55,6 +55,10 @@ sub main{
                         my $meeting = $1;
                         debug('Return meeting <' . $meeting . '>');
                         returnMeeting($connection, $request, $meeting);
+                    } elsif ( $request->uri->path =~ /^\/clear\/(\d+)$/ ) { # TODO - add a proper expiry/clearout API
+                        # Clear anything that hasn't been touched in 2 weeks
+                        # 2 weeks * 7 days * 24 hours * 60 minutes * 60 seconds = 1209600 seconds
+                        clearOldMeetings($1);
                     } else {
                         $connection->send_error(500, 'Internal error');
                     }
@@ -216,6 +220,7 @@ sub returnUserMeetings {
             if( $requestingUserID && $requestingUserID eq $id ) {
                 debug('Setting user <' . $id . '> in meeting <' . $meeting . '> notified to 1');
                 $redis->set("meeting:$meeting:$id:notified", 1);
+                $redis->set("meeting:$meeting:touched" => time);
             }
         }
         chop $content;
@@ -253,6 +258,7 @@ sub returnMeeting {
     if ( $redis->sismember("util:list:meetings", $meeting) ) {
         $content  = "{\"id\": " . $meeting . ",";
         $content .= " \"name\": \"" . $redis->get("meeting:$meeting:name") . "\",";
+        $redis->set("meeting:$meeting:touched" => time);
         # $content = Add state
         my @participants = $redis->smembers("meeting:$meeting:participants");
         if ( scalar @participants > 0 ) {
@@ -379,12 +385,15 @@ sub createMeeting {
     my $meeting = $redis->incr('util:counter:meetings');
     $redis->set("meeting:$meeting:name" => $meetingName);
     $redis->set("meeting:$meeting:state" => 0);
+    $redis->set("meeting:$meeting:touched" => time);
     $redis->sadd("meeting:$meeting:participants" => $id);
     $redis->set("meeting:$meeting:$id:state" => 0);
     $redis->set("meeting:$meeting:$id:notified" => 1);
     $redis->sadd("util:list:meetings" => $meeting);
     $redis->sadd("user:$id:meetings" => $meeting);
     $redis->quit;
+
+    debug('meeting made with id <' . $meeting . '>');
 
     my $hdr     = HTTP::Headers->new(Content_Type => 'application/json',
                                      Connection   => 'close');
@@ -431,6 +440,7 @@ sub addParticipant {
     $redis->set("meeting:$meeting:$id:state" => 0);
     $redis->set("meeting:$meeting:$id:notified" => 0);
     $redis->sadd("user:$id:meetings" => $meeting);
+    $redis->set("meeting:$meeting:touched" => time);
     $redis->quit;
 
     my $hdr     = HTTP::Headers->new(Content_Type => 'application/json',
@@ -459,6 +469,7 @@ sub setParticipantStatus {
         return;
     }
 
+    # Check the userid exists
     my $exists = userExists($id);
     if ( $exists == 0 ) {
         debug('User id <' . $id . '> not found');
@@ -469,14 +480,36 @@ sub setParticipantStatus {
         return;
     }
 
+    # Set the participant's status
     my $redis;
     if ( $redis = Redis->new( server => 'localhost:6379', encoding => undef ) ) {
+        $redis->set("meeting:$meeting:touched" => time);
         if ( $state eq 'ready' ) {
             $redis->set( "meeting:$meeting:$id:state" => 1);
         } else {
             debug( 'failed to set user status' );
             $conn->send_error(500, "Internal error");
         }
+        # Check if the meeting is now ready
+        if( $redis->get("meeting:$meeting:state") eq 0 ){
+            debug( 'checking if the meeting is now ready' );
+            my @participants = $redis->smembers("meeting:$meeting:participants");
+            if ( scalar @participants > 0 ) {
+                my $meetingState = 1;
+                foreach my $participant (sort @participants){
+                    if( $redis->get("meeting:$meeting:$participant:state") eq 0 ){
+                        debug( 'meeting is not ready as we are still waiting for participant <' . $participant . '>' );
+                        $meetingState = 0;
+                    }
+                }
+                $redis->set("meeting:$meeting:state" => $meetingState);
+            }
+        }
+        # get meeting status.  if not ready...
+        # smembers of meeting $m
+        # assume meeting ready
+        # foreach, if member not ready, set to not ready
+        # set meeting to final put state
     } else {
         debug( 'Failed to connect to Redis' );
         $conn->send_error(500, "Internal error");
@@ -522,6 +555,54 @@ sub getRequestingUseID {
     } else {
         return;
     }
+}
+
+# Go through all meetings and clear up any old meetings
+sub clearOldMeetings {
+    my $lastday  = shift;
+    my $deadline = time - $lastday;
+    debug( 'Removing any meetings that have not been touched since <' . $deadline . '>' );
+
+    my $redis;
+    if ( $redis = Redis->new( server => 'localhost:6379', encoding => undef ) ) {
+        my @meetings = $redis->smembers("util:list:meetings");
+        if( defined $meetings[0] ){
+            foreach my $meeting (sort @meetings){
+                if( $redis->get("meeting:$meeting:touched") <= $deadline ) {
+
+                    my @participants = $redis->smembers("meeting:$meeting:participants");
+                    if ( scalar @participants > 0 ) {
+                        foreach my $participant (sort @participants){
+                            $redis->srem("user:$participant:meetings" => $meeting);
+                            $redis->srem("meeting:$meeting:participants" => $participant);
+                            $redis->del("meeting:$meeting:$participant:state");
+                            $redis->del("meeting:$meeting:$participant:notified");
+                            if ( scalar @participants == 1 ) {
+                                $redis->del("user:$participant:meetings");
+                            }
+                        }
+                    }
+                    $redis->srem("util:list:meetings" => $meeting);
+                    $redis->del("meeting:$meeting:name");
+                    $redis->del("meeting:$meeting:state");
+                    $redis->del("meeting:$meeting:touched");
+                    $redis->del("meeting:$meeting:participants");
+                }
+            }
+        }
+
+        # TODO - Validity check?
+        # for each participant
+        #  for each of their meetings
+        #   check meeting exists
+        #   if not, remove from participant's list?  Remove all keys for that meeting? remove from meeting list?
+        # Glad this is single threaded or we could delete stuff while someone's making it!
+        # God, we need a global lock =(
+
+        $redis->quit;
+    }
+
+    return; 
 }
 
 # Check if a user is valid

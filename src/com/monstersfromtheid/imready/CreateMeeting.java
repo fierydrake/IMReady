@@ -69,7 +69,7 @@ public class CreateMeeting extends Activity {
         switch (item.getItemId()) {
         case R.id.menu_account:
             // Open the accounts page and blank the "history"
-            Uri resetAccountDetails = Uri.parse("content://com.realitycheckpoint.imready/util/" + IMReady.ACTIONS_ACOUNT_CHANGE_DETAILS);
+            Uri resetAccountDetails = Uri.parse("content://com.monstersfromtheid.imready/util/" + IMReady.ACTIONS_ACOUNT_CHANGE_DETAILS); // TODO hackish
             startActivity(new Intent(Intent.ACTION_VIEW, resetAccountDetails, CreateMeeting.this, DefineAccount.class));
             finish();
             return true;
@@ -103,7 +103,7 @@ public class CreateMeeting extends Activity {
             public void success(Integer meetingId) {
                 Toast.makeText(CreateMeeting.this, "Your meeting '"+name+"' was created with id " + meetingId, Toast.LENGTH_SHORT).show();
 
-                Uri internalMeetingUri = Uri.parse("content://com.realitycheckpoint.imready/meeting/" + meetingId + "/" + Uri.encode(name)); // TODO hackish
+                Uri internalMeetingUri = Uri.parse("content://com.monstersfromtheid.imready/meeting/" + meetingId + "/" + Uri.encode(name)); // TODO hackish
                 startActivity( new Intent(Intent.ACTION_VIEW, internalMeetingUri, CreateMeeting.this, ViewMeeting.class) );
             }
             @Override
