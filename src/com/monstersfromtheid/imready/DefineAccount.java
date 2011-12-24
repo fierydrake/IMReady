@@ -1,4 +1,4 @@
-package com.realitycheckpoint.imready;
+package com.monstersfromtheid.imready;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -14,9 +14,9 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
 
-import com.realitycheckpoint.imready.client.API;
-import com.realitycheckpoint.imready.client.API.Action;
-import com.realitycheckpoint.imready.client.APICallFailedException;
+import com.monstersfromtheid.imready.client.API;
+import com.monstersfromtheid.imready.client.API.Action;
+import com.monstersfromtheid.imready.client.APICallFailedException;
 
 public class DefineAccount extends Activity {
 

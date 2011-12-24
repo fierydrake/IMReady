@@ -1,4 +1,4 @@
-package com.realitycheckpoint.imready;
+package com.monstersfromtheid.imready;
 
 import android.app.Activity;
 import android.content.Intent;
@@ -17,8 +17,8 @@ import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.realitycheckpoint.imready.client.API;
-import com.realitycheckpoint.imready.client.APICallFailedException;
+import com.monstersfromtheid.imready.client.API;
+import com.monstersfromtheid.imready.client.APICallFailedException;
 
 public class CreateMeeting extends Activity {
 

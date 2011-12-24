@@ -1,4 +1,4 @@
-package com.realitycheckpoint.imready.client;
+package com.monstersfromtheid.imready.client;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -24,7 +24,7 @@ import org.json.JSONTokener;
 import android.net.http.AndroidHttpClient;
 import android.os.Handler;
 
-import com.realitycheckpoint.imready.IMReady;
+import com.monstersfromtheid.imready.IMReady;
 
 public class API {
 	public abstract static class Action<T> implements Runnable {
@@ -50,7 +50,7 @@ public class API {
 		new Thread(action).start();
 	}
 	
-	private static final String SERVER_URI = "http://www.monkeysplayingpingpong.co.uk:54321/"; 
+	private static final String SERVER_URI = "http://imready.monstersfromtheid.co.uk:54321/"; 
 	
 	private String requestingUserId;
 	

@@ -1,13 +1,13 @@
-package com.realitycheckpoint.imready.test;
+package com.monstersfromtheid.imready.test;
 
 import java.util.List;
 import java.util.UUID;
 
-import com.realitycheckpoint.imready.CreateMeeting;
-import com.realitycheckpoint.imready.client.API;
-import com.realitycheckpoint.imready.client.APICallFailedException;
-import com.realitycheckpoint.imready.client.Meeting;
-import com.realitycheckpoint.imready.client.Participant;
+import com.monstersfromtheid.imready.CreateMeeting;
+import com.monstersfromtheid.imready.client.API;
+import com.monstersfromtheid.imready.client.APICallFailedException;
+import com.monstersfromtheid.imready.client.Meeting;
+import com.monstersfromtheid.imready.client.Participant;
 
 public class APITest extends android.test.ActivityInstrumentationTestCase2<CreateMeeting> {
 	private API api;
@@ -15,7 +15,7 @@ public class APITest extends android.test.ActivityInstrumentationTestCase2<Creat
 	private String secondaryUserId;
 
 	public APITest() {
-		super("com.realitycheckpoint.imready", CreateMeeting.class);
+		super("com.monstersfromtheid.imready", CreateMeeting.class);
 	}
 
 	public void setUp() throws Exception {

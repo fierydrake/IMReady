@@ -1,4 +1,4 @@
-package com.realitycheckpoint.imready.client;
+package com.monstersfromtheid.imready.client;
 
 public class User {
     private String id;
