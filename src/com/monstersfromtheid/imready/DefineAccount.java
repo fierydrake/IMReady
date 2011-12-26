@@ -49,9 +49,9 @@ public class DefineAccount extends Activity {
         	}
         }
         
-        /* Otherwise, we're launched from new.  If an account is already defined, move to meeting creation. */
+        /* Otherwise, we're launched from new.  If an account is already defined, move to meeting list. */
         if ( !changeAccount && getSharedPreferences(IMReady.PREFERENCES_NAME, MODE_PRIVATE).getBoolean("accountDefined", false)) {
-            startActivityForResult(new Intent(DefineAccount.this, CreateMeeting.class), ACTIVITY_GOT_ACCOUNT);
+            startActivityForResult(new Intent(DefineAccount.this, MyMeetings.class), ACTIVITY_GOT_ACCOUNT);
             /* Otherwise, create an account */
         } else {
             setContentView(R.layout.define_account);
@@ -127,7 +127,7 @@ public class DefineAccount extends Activity {
                 preferences.commit();
 
                 /* Now we have an account, we can go to create a meeting */
-                startActivityForResult(new Intent(DefineAccount.this, CreateMeeting.class), ACTIVITY_GOT_ACCOUNT);
+                startActivityForResult(new Intent(DefineAccount.this, MyMeetings.class), ACTIVITY_GOT_ACCOUNT);
             }
 
             @Override
