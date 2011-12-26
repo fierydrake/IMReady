@@ -1,4 +1,4 @@
-package com.realitycheckpoint.imready.client;
+package com.monstersfromtheid.imready.client;
 
 public class Participant {
     public static final int STATE_NOT_READY = 0;

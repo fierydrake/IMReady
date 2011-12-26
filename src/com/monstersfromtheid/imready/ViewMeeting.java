@@ -1,4 +1,4 @@
-package com.realitycheckpoint.imready;
+package com.monstersfromtheid.imready;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -16,11 +16,11 @@ import android.widget.SimpleAdapter;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.realitycheckpoint.imready.client.API;
-import com.realitycheckpoint.imready.client.API.Action;
-import com.realitycheckpoint.imready.client.APICallFailedException;
-import com.realitycheckpoint.imready.client.Meeting;
-import com.realitycheckpoint.imready.client.Participant;
+import com.monstersfromtheid.imready.client.API;
+import com.monstersfromtheid.imready.client.API.Action;
+import com.monstersfromtheid.imready.client.APICallFailedException;
+import com.monstersfromtheid.imready.client.Meeting;
+import com.monstersfromtheid.imready.client.Participant;
 
 public class ViewMeeting extends ListActivity {
     private ArrayList<HashMap<String, ?>> participants = new ArrayList<HashMap<String, ?>>();

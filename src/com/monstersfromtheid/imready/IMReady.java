@@ -1,4 +1,4 @@
-package com.realitycheckpoint.imready;
+package com.monstersfromtheid.imready;
 
 public class IMReady {
 	public static final String PREFERENCES_NAME = "IMReadyPrefs";

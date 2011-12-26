@@ -1,4 +1,4 @@
-package com.realitycheckpoint.imready.client;
+package com.monstersfromtheid.imready.client;
 
 import java.util.Collections;
 import java.util.List;
