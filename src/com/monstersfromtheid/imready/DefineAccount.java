@@ -49,7 +49,7 @@ public class DefineAccount extends Activity {
         	}
         }
         
-        /* Otherwise, we're launched from new.  If an account is already defined, move to meeting list. */
+        /* If we're launched from new.  If an account is already defined, move to meeting list. */
         if ( !changeAccount && getSharedPreferences(IMReady.PREFERENCES_NAME, MODE_PRIVATE).getBoolean("accountDefined", false)) {
             startActivityForResult(new Intent(DefineAccount.this, MyMeetings.class), ACTIVITY_GOT_ACCOUNT);
             /* Otherwise, create an account */
@@ -93,9 +93,7 @@ public class DefineAccount extends Activity {
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         /* If returning after ACTIVITY_GOT_ACCOUNT then just exit this Activity */
         if (requestCode == ACTIVITY_GOT_ACCOUNT) {
-            if (resultCode != RESULT_CANCELED) {
-                finish();
-            }
+            finish();
         }
     }
 
