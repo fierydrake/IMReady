@@ -103,8 +103,9 @@ public class CreateMeeting extends Activity {
             public void success(Integer meetingId) {
                 Toast.makeText(CreateMeeting.this, "Your meeting '"+name+"' was created with id " + meetingId, Toast.LENGTH_SHORT).show();
 
-                Uri internalMeetingUri = Uri.parse("content://com.monstersfromtheid.imready/meeting/" + meetingId + "/" + Uri.encode(name)); // TODO hackish
-                startActivity( new Intent(Intent.ACTION_VIEW, internalMeetingUri, CreateMeeting.this, ViewMeeting.class) );
+                //Uri internalMeetingUri = Uri.parse("content://com.monstersfromtheid.imready/meeting/" + meetingId + "/" + Uri.encode(name)); // TODO hackish
+                //startActivity( new Intent(Intent.ACTION_VIEW, internalMeetingUri, CreateMeeting.this, ViewMeeting.class) );
+                finish();
             }
             @Override
             public void failure(APICallFailedException e) {

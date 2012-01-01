@@ -20,13 +20,16 @@ import android.widget.Button;
 import android.widget.SimpleAdapter;
 import android.widget.Toast;
 
+import com.monstersfromtheid.imready.IMReady;
 import com.monstersfromtheid.imready.client.API;
 import com.monstersfromtheid.imready.client.API.Action;
 import com.monstersfromtheid.imready.client.APICallFailedException;
 import com.monstersfromtheid.imready.client.Meeting;
 
 public class MyMeetings extends ListActivity {
-    private ArrayList<HashMap<String, ?>> meetings = new ArrayList<HashMap<String, ?>>();
+	public static final int ACTIVITY_CREATE_MEETING = 0;
+
+	private ArrayList<HashMap<String, ?>> meetings = new ArrayList<HashMap<String, ?>>();
     private String[] from = new String[] { "name", "participantCount" };
     private int[] to = new int[] { R.id.meeting_list_item_name,  
             R.id.meeting_list_item_participant_count };
@@ -75,21 +78,7 @@ public class MyMeetings extends ListActivity {
         final Button createMeeting = (Button)getLayoutInflater().inflate(R.layout.meetings_create_meeting_button, null);
         createMeeting.setOnClickListener(new OnClickListener() {
         	public void onClick(View v) {
-        		API.performInBackground(new Action<Void>() {
-        			@Override
-        			public Void action() throws APICallFailedException {
-        				api.createMeeting(api.getRequestingUserId(), "GenMeeting");
-        				return null;
-        			}
-        			@Override
-        			public void success(Void result) {
-        				API.performInBackground(new RefreshMeetingsAction(api));
-        			}
-        			@Override
-        			public void failure(APICallFailedException e) {
-        				Toast.makeText(MyMeetings.this, "Failed: " + e, Toast.LENGTH_LONG).show();
-        			}
-        		});
+        		startActivityForResult(new Intent(MyMeetings.this, CreateMeeting.class), ACTIVITY_CREATE_MEETING);
         	}
         });
         getListView().addFooterView(createMeeting);
@@ -105,7 +94,18 @@ public class MyMeetings extends ListActivity {
         });
         setListAdapter(adapter);
     }
-    
+
+	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        /* If returning after ACTIVITY_GOT_ACCOUNT then just exit this Activity */
+        if (requestCode == ACTIVITY_CREATE_MEETING) {
+        	String userName = getSharedPreferences(IMReady.PREFERENCES_NAME, MODE_PRIVATE).getString("accountUserName", "");
+            
+            final API api = new API(userName);
+
+            API.performInBackground(new RefreshMeetingsAction(api));
+        }
+    }
+
 	private void clearMeetings() {
         meetings.clear();
     }
