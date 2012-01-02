@@ -20,7 +20,6 @@ import android.widget.Button;
 import android.widget.SimpleAdapter;
 import android.widget.Toast;
 
-import com.monstersfromtheid.imready.IMReady;
 import com.monstersfromtheid.imready.client.API;
 import com.monstersfromtheid.imready.client.API.Action;
 import com.monstersfromtheid.imready.client.APICallFailedException;
@@ -66,7 +65,7 @@ public class MyMeetings extends ListActivity {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         
-        String userNickName = getSharedPreferences(IMReady.PREFERENCES_NAME, MODE_PRIVATE).getString("accountNickName", "");
+//        String userNickName = getSharedPreferences(IMReady.PREFERENCES_NAME, MODE_PRIVATE).getString("accountNickName", "");
         String userName = getSharedPreferences(IMReady.PREFERENCES_NAME, MODE_PRIVATE).getString("accountUserName", "");
         
         final API api = new API(userName);
