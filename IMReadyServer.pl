@@ -456,7 +456,7 @@ sub setParticipantStatus {
     my $req     = shift;
     my $meeting = shift;
     my $id      = shift;
-    
+
     my $q = CGI->new($req->content);
     my $state = $q->param('status');
     debug( 'Setting participant <' . $id . '> in meeting <' . $meeting . '> to state <' . $state . '>' );
@@ -505,11 +505,6 @@ sub setParticipantStatus {
                 $redis->set("meeting:$meeting:state" => $meetingState);
             }
         }
-        # get meeting status.  if not ready...
-        # smembers of meeting $m
-        # assume meeting ready
-        # foreach, if member not ready, set to not ready
-        # set meeting to final put state
     } else {
         debug( 'Failed to connect to Redis' );
         $conn->send_error(500, "Internal error");
