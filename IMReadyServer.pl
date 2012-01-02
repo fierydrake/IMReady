@@ -69,15 +69,15 @@ sub main{
                     } elsif ( $request->uri->path eq '/meetings' ) {
                         debug('Create meeting');
                         createMeeting($connection, $request);
+                    } elsif ($request->uri->path =~ /^\/meeting\/(\d+)\/participants$/ ) {
+                        my $meeting = $1;
+                        debug('Adding user to meeting <' . $meeting . '>');
+                        addParticipant($connection, $request, $meeting);
                     } else {
                         $connection->send_error(500, 'Internal error');
                     }
                 } elsif ( $request->method eq 'PUT' ) {
-                    if ($request->uri->path =~ /^\/meeting\/(\d+)\/participants$/ ) {
-                        my $meeting = $1;
-                        debug('Adding user to meeting <' . $meeting . '>');
-                        addParticipant($connection, $request, $meeting);
-                    } elsif ( $request->uri->path =~ /^\/meeting\/(\d+)\/participant\/($unamePattern)$/ ) {
+                    if ( $request->uri->path =~ /^\/meeting\/(\d+)\/participant\/($unamePattern)$/ ) {
                         my $meeting = $1;
                         my $username = $2;
                         debug('Setting the status of user <' . $username . '> in meeting <' . $meeting . '>');
@@ -86,8 +86,14 @@ sub main{
                         $connection->send_error(500, 'Internal error');
                     }
                 } elsif ( $request->method eq 'DELETE' ) {
-                    debug('Askes to DELETE but there\'s no D in the CRUD yet');
-                    $connection->send_error(500, 'Internal error');
+                    if ( $request->uri->path =~ /^\/meeting\/(\d+)\/participant\/($unamePattern)$/ ) {
+                        my $meeting = $1;
+                        my $username = $2;
+                        debug('Removing user <' . $username . '> from meeting <' . $meeting . '>');
+                        removeParticipant($connection, $request, $meeting, $username);
+                    } else {
+                        $connection->send_error(500, 'Internal error');
+                    }
                 } else {
                     $connection->send_error(500, 'Internal error');
                 }
@@ -436,10 +442,76 @@ sub addParticipant {
         $conn->send_error(500, "Internal error");
         return;
     }
+
+    unless ( $redis->sismember("util:list:meetings", $meeting) ) {
+        debug('Meeting id <' . $meeting . '> not found');
+        $conn->send_error(404, "Meeting not found");
+        return;
+    }
+
     $redis->sadd("meeting:$meeting:participants" => $id);
     $redis->set("meeting:$meeting:$id:state" => 0);
     $redis->set("meeting:$meeting:$id:notified" => 0);
     $redis->sadd("user:$id:meetings" => $meeting);
+    $redis->set("meeting:$meeting:touched" => time);
+    $redis->quit;
+
+    my $hdr     = HTTP::Headers->new(Content_Type => 'application/json',
+                                     Connection   => 'close');
+    my $content = "";
+
+    my $resp = HTTP::Response->new(RC_OK, "", $hdr, $content);
+    $conn->send_response($resp);
+}
+
+sub removeParticipant {
+    my $conn    = shift;
+    my $req     = shift;
+    my $meeting = shift;
+    my $id      = shift;
+    
+    debug('Remove user <' . $id . "> from meeting <" . $meeting . ">" );
+
+    # Check the user id is valid
+    my $valid = userValid($id);
+    if ( $valid == 0 ) {
+        debug('Invalid user id <' . $id . '>');
+        $conn->send_error(500, "Internal Error");
+        return;
+    }
+
+    my $exists = userExists($id);
+    if ( $exists == 0 ) {
+        debug('User id <' . $id . '> not found');
+        $conn->send_error(404, "User id not found");
+        return;
+    } elsif ( $exists == -1 ) {
+        $conn->send_error(500, "Internal error");
+        return;
+    }
+
+    my $redis;
+    unless ( $redis = Redis->new( server => 'localhost:6379', encoding => undef ) ) {
+        debug('Failed to connect to Redis');
+        $conn->send_error(500, "Internal error");
+        return;
+    }
+
+    unless ( $redis->sismember("util:list:meetings", $meeting) ) {
+        debug('Meeting id <' . $meeting . '> not found');
+        $conn->send_error(404, "Meeting not found");
+        return;
+    }
+    unless ( $redis->sismember("meeting:$meeting:participants", $id) ) {
+        debug('User id <' . $id . '> not a participant of meeting <' . $meeting . '>');
+        $conn->send_error(400, "User not a participant of meeting");
+        return;
+    }
+
+    $redis->srem("meeting:$meeting:participants" => $id);
+    $redis->del("meeting:$meeting:$id:state");
+    $redis->del("meeting:$meeting:$id:notified");
+    $redis->srem("user:$id:meetings" => $meeting);
     $redis->set("meeting:$meeting:touched" => time);
     $redis->quit;
 

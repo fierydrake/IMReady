@@ -78,11 +78,8 @@
           <p>Failure cases include: 
              <br>User id not found => HTTP 404 (Not Found)
              <br>Internal error => HTTP 500 (Internal Server Error)
-    </dl>
 
-    <h4>PUT requests</h4>
-    <dl>
-      <dt>PUT /meeting/:mid:/participants
+      <dt>POST /meeting/:mid:/participants
       <dd>Request should encode form parameters with key <code>id</code>.
           <br>Adds the user with the given id as a participant of the meeting 
           with id <code>:mid:</code>.
@@ -92,12 +89,28 @@
              <br>Meeting not found => HTTP 404 (Not Found)
              <br>User id not found => HTTP 404 (Not Found)
              <br>Internal error => HTTP 500 (Internal Server Error)
+    </dl>
 
+    <h4>PUT requests</h4>
+    <dl>
       <dt>PUT /meeting/:mid:/participant/:uid:
       <dd>Request should encode form parameters with key <code>status</code>
           with value <code>ready</code>.
           <br>Sets status of participant with user id <code>:uid:</code> to 
           ready in meeting with id <code>:mid</code>.
+          <br>On success, responds with HTTP status code 200 (OK).
+          <br>On failure, responds with a HTTP status code that is not 200.
+          <p>Failure cases include: 
+             <br>Meeting not found => HTTP 404 (Not Found)
+             <br>User id not found => HTTP 404 (Not Found)
+             <br>User not a participant of meeting => HTTP 400 (Bad Request)
+             <br>Internal error => HTTP 500 (Internal Server Error)
+    </dl>
+
+    <h4>DELETE requests</h4>
+    <dl>
+      <dt>DELETE /meeting/:mid:/participant/:uid:
+      <dd>Removes the user with id :uid: from meeting with id :mid:
           <br>On success, responds with HTTP status code 200 (OK).
           <br>On failure, responds with a HTTP status code that is not 200.
           <p>Failure cases include: 
