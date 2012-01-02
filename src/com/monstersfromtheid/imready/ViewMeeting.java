@@ -12,10 +12,12 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.view.View;
 import android.view.View.OnClickListener;
+import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.SimpleAdapter;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.widget.AdapterView.OnItemClickListener;
 
 import com.monstersfromtheid.imready.client.API;
 import com.monstersfromtheid.imready.client.API.Action;
@@ -74,7 +76,7 @@ public class ViewMeeting extends ListActivity {
         if (!m.matches()) { return; } // TODO Error handling
 
         String userNickName = getSharedPreferences(IMReady.PREFERENCES_NAME, MODE_PRIVATE).getString("accountNickName", "");
-        String userName = getSharedPreferences(IMReady.PREFERENCES_NAME, MODE_PRIVATE).getString("accountUserName", "");
+        final String userName = getSharedPreferences(IMReady.PREFERENCES_NAME, MODE_PRIVATE).getString("accountUserName", "");
         
         api = new API(userName);
         meetingId = Integer.parseInt(m.group(1));
@@ -92,6 +94,36 @@ public class ViewMeeting extends ListActivity {
                 }
                 return false;
             }
+        });
+
+        getListView().setOnItemClickListener(new OnItemClickListener() {
+			public void onItemClick(AdapterView parentView, View childView, int position, long id) {
+				HashMap<String, ?> info = participants.get(position);
+				final String userId = (String)info.get("userId");
+				final Boolean readiness = (Boolean)info.get("readiness");
+				
+				if( readiness || !userId.equalsIgnoreCase(userName)) {
+					return;
+				}
+				API.performInBackground(new Action<Void>() {
+        			@Override
+        			public Void action() throws APICallFailedException {
+        				api.ready(meetingId, userId);
+        				return null;
+        			}
+        			@Override
+        			public void success(Void result) {
+        				API.performInBackground(new RefreshMeetingDetailsAction(api, meetingId));
+        			}
+        			@Override
+        			public void failure(APICallFailedException e) {
+        				Toast.makeText(ViewMeeting.this, "Failed to set user status: " + e, Toast.LENGTH_LONG).show();
+        			}
+        		});
+				
+				//Uri internalMeetingUri = Uri.parse("content://com.monstersfromtheid.imready/meeting/" + meetingId + "/" + Uri.encode(name)); // TODO hackish
+                //startActivity( new Intent(Intent.ACTION_VIEW, internalMeetingUri, MyMeetings.this, ViewMeeting.class) );
+			}
         });
         
         final Button addParticipant = (Button)getLayoutInflater().inflate(R.layout.view_meeting_add_participant_button, null);
@@ -126,6 +158,7 @@ public class ViewMeeting extends ListActivity {
 
     private void addParticipant(String nick, String id, boolean readiness) {
         HashMap<String, Object> userItem = new HashMap<String, Object>();
+        userItem.put("userId", id);
         userItem.put("name", nick + " (" + id + ")");
         userItem.put("readiness", readiness);
         participants.add(userItem);
