@@ -5,7 +5,6 @@
 	<string name="create_meeting_name_label">Meeting name</string>
 	<string name="create_meeting_default_meeting_name">My meeting</string>
     <string name="create_meeting_create">Create meeting</string>
-	<string name="create_meeting_nickname">Hi there</string>
 
     <string name="define_account_nickname">Dave</string>
     <string name="define_account_username">dave123</string>

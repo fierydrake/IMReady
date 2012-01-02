@@ -101,8 +101,17 @@ public class MyMeetings extends ListActivity {
         	String userName = getSharedPreferences(IMReady.PREFERENCES_NAME, MODE_PRIVATE).getString("accountUserName", "");
             
             final API api = new API(userName);
-
             API.performInBackground(new RefreshMeetingsAction(api));
+
+            if(resultCode == RESULT_OK) {
+            	int meetingId = data.getIntExtra(IMReady.RETURNS_MEETING_ID, -1);
+            	if (meetingId == -1){
+            		return;
+            	}
+            	String name = data.getStringExtra(IMReady.RETURNS_MEETING_NAME);
+            	Uri internalMeetingUri = Uri.parse("content://com.monstersfromtheid.imready/meeting/" + meetingId + "/" + Uri.encode(name)); // TODO hackish
+            	startActivity( new Intent(Intent.ACTION_VIEW, internalMeetingUri, MyMeetings.this, ViewMeeting.class) );
+            }
         }
     }
 
@@ -129,8 +138,8 @@ public class MyMeetings extends ListActivity {
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
         case R.id.menu_account:
-            // Open the accounts page and blank the "history"
-            Uri resetAccountDetails = Uri.parse("content://com.monstersfromtheid.imready/util/" + IMReady.ACTIONS_ACOUNT_CHANGE_DETAILS); // TODO hackish
+            // Open the accounts page and blank the "activity history"
+            Uri resetAccountDetails = Uri.parse("content://com.monstersfromtheid.imready/util/" + IMReady.ACTIONS_ACOUNT_CHANGE_DETAILS);
             startActivity(new Intent(Intent.ACTION_VIEW, resetAccountDetails, MyMeetings.this, DefineAccount.class));
             finish();
             return true;

@@ -32,12 +32,6 @@ public class CreateMeeting extends Activity {
         final Button createMeeting = (Button)findViewById(R.id.create_meeting_button);
         final EditText meetingName = (EditText)findViewById(R.id.create_meeting_meeting_name);
 
-        String nickName = getSharedPreferences(IMReady.PREFERENCES_NAME, MODE_PRIVATE).getString("accountNickName", "");
-        if (!nickName.equalsIgnoreCase("")) {
-            TextView welcomeLine = (TextView)findViewById(R.id.create_meeting_nickname);
-            welcomeLine.setText("Hello " + nickName);
-        }
-
         createMeeting.setOnClickListener(new OnClickListener() {
             public void onClick(View v) {
                 createMeeting(meetingName.getText().toString());
@@ -57,39 +51,6 @@ public class CreateMeeting extends Activity {
         });
     }
 
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-     MenuInflater inflater = getMenuInflater();
-        inflater.inflate(R.menu.main_menu, menu);
-        return true;
-    }
-    
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        switch (item.getItemId()) {
-        case R.id.menu_account:
-            // Open the accounts page and blank the "history"
-            Uri resetAccountDetails = Uri.parse("content://com.monstersfromtheid.imready/util/" + IMReady.ACTIONS_ACOUNT_CHANGE_DETAILS); // TODO hackish
-            startActivity(new Intent(Intent.ACTION_VIEW, resetAccountDetails, CreateMeeting.this, DefineAccount.class));
-            finish();
-            return true;
-        case R.id.menu_blank:
-            SharedPreferences.Editor preferences = getSharedPreferences(IMReady.PREFERENCES_NAME, MODE_PRIVATE).edit();
-            preferences.remove("accountDefined");
-            preferences.remove("accountUserName");
-            preferences.remove("accountNickName");
-            preferences.commit();
-        
-            Toast.makeText(CreateMeeting.this, "Blanked", Toast.LENGTH_SHORT).show();
-
-            setResult(RESULT_CANCELED);
-            finish();
-            return true;
-        default:
-            return super.onOptionsItemSelected(item);
-        }
-    }
-
     private void createMeeting(final String name) {
         final String creatorId = getSharedPreferences(IMReady.PREFERENCES_NAME, MODE_PRIVATE).getString("accountUserName", "");
         final API api = new API(creatorId);
@@ -103,8 +64,10 @@ public class CreateMeeting extends Activity {
             public void success(Integer meetingId) {
                 Toast.makeText(CreateMeeting.this, "Your meeting '"+name+"' was created with id " + meetingId, Toast.LENGTH_SHORT).show();
 
-                //Uri internalMeetingUri = Uri.parse("content://com.monstersfromtheid.imready/meeting/" + meetingId + "/" + Uri.encode(name)); // TODO hackish
-                //startActivity( new Intent(Intent.ACTION_VIEW, internalMeetingUri, CreateMeeting.this, ViewMeeting.class) );
+                final Intent i = new Intent();
+                i.putExtra(IMReady.RETURNS_MEETING_ID, meetingId);
+                i.putExtra(IMReady.RETURNS_MEETING_NAME, name);
+                setResult(RESULT_OK, i);
                 finish();
             }
             @Override
