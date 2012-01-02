@@ -16,6 +16,7 @@
     
 
 <activity android:name="CreateMeeting"></activity>
+<activity android:name="AddParticipant"></activity>
 <activity android:name="MyMeetings" android:label="My meetings"></activity>
 <activity android:name="ViewMeeting" android:label="View meeting"></activity>
 </application>

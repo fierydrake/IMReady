@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+	android:orientation="vertical"
+	android:layout_width="match_parent"
+	android:layout_height="match_parent" >
+
+	<LinearLayout
+		android:orientation="vertical"
+		android:layout_width="match_parent"
+		android:layout_height="wrap_content"
+		android:layout_weight="1"
+		android:gravity="top"
+		android:padding="10dp">
+		<TextView  
+		    android:layout_width="match_parent" 
+		    android:layout_height="wrap_content"
+		    android:text="@string/add_participant_user_name_label"/>
+
+		<EditText
+		    android:id="@+id/add_participant_user_name"
+		    android:layout_width="match_parent"
+		    android:layout_height="wrap_content"
+		    android:text="@string/add_participant_button_default_user_name" />
+
+		<Button android:id="@+id/add_participant_button" 
+			android:layout_width="match_parent" 
+			android:layout_height="wrap_content"
+			android:text="@string/add_participant_button"/>
+	</LinearLayout>
+</LinearLayout>

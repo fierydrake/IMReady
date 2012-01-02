@@ -14,6 +14,10 @@
 
     <string name="view_meeting_add_participant_button">Add participant...</string>
     <string name="meetings_create_meeting_button">Create meeting...</string>
+    
+    <string name="add_participant_user_name_label">User name</string>
+    <string name="add_participant_button_default_user_name"></string>
+    <string name="add_participant_button">Add participant...</string>
 
     <string name="menu_account">Account settings</string>
 </resources>
