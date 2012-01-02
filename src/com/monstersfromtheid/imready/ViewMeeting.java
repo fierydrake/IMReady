@@ -30,8 +30,9 @@ public class ViewMeeting extends ListActivity {
     private String[] from = new String[] { "name", "readiness" };
     private int[] to = new int[] { R.id.meeting_participant_list_item_name,  
             R.id.meeting_participant_list_item_readiness };
-    private SimpleAdapter adapter; 
-    
+    private SimpleAdapter adapter;
+    private boolean myStatus = false;
+
     private class RefreshMeetingDetailsAction extends Action<Meeting> {
     	private API api;
     	private int meetingId;
@@ -48,11 +49,13 @@ public class ViewMeeting extends ListActivity {
             updateMeetingInfo(meeting.getName(), meeting.getId());
             clearParticipants();
             for (Participant participant : meeting.getParticipants()) {
-                addParticipant(
-                        participant.getUser().getDefaultNickname(), 
-                        participant.getUser().getId(), 
-                        participant.getState() == Participant.STATE_READY
-                        );
+            	if( ! this.api.getRequestingUserId().equalsIgnoreCase(participant.getUser().getId()) ) {
+            		addParticipant(
+            				participant.getUser().getDefaultNickname(), 
+            				participant.getUser().getId(), 
+            				participant.getState() == Participant.STATE_READY
+                        	);
+            	}
             }
             adapter.notifyDataSetChanged();
         }
@@ -98,35 +101,44 @@ public class ViewMeeting extends ListActivity {
             }
         });
 
-        getListView().setOnItemClickListener(new OnItemClickListener() {
-			public void onItemClick(AdapterView parentView, View childView, int position, long id) {
-				HashMap<String, ?> info = participants.get(position);
-				final String userId = (String)info.get("userId");
-				final Boolean readiness = (Boolean)info.get("readiness");
-				
-				if( readiness || !userId.equalsIgnoreCase(userName)) {
+        final View setReadiness = getLayoutInflater().inflate(R.layout.view_meeting_set_participant_status_button, null);
+        final TextView userIdText = (TextView) setReadiness.findViewById(R.id.meeting_participant_my_name);
+        userIdText.setText(userNickName + "(" + userName + ")");
+        final TextView readinessText = (TextView) setReadiness.findViewById(R.id.meeting_participant_my_readiness);
+		readinessText.setText("Not ready");
+		readinessText.setTextColor(Color.RED);
+// TODO - The button is overriding the onclick with null.  Fix it
+        setReadiness.setOnClickListener(new OnClickListener() {
+        	public void onClick(View v) {
+        		/* We can only set status to ready, so if we already are then we're done. */
+				if( myStatus ) {
 					return;
 				}
+
+				/* Set the status on the server */
 				API.performInBackground(new Action<Void>() {
         			@Override
         			public Void action() throws APICallFailedException {
-        				api.ready(meetingId, userId);
+        				api.ready(meetingId, userName);
         				return null;
         			}
         			@Override
         			public void success(Void result) {
-        				API.performInBackground(new RefreshMeetingDetailsAction(api, meetingId));
+        				/* Set the status colour to green */
+        				readinessText.setText("Ready");
+        				readinessText.setTextColor(Color.GREEN);
+
+        				/* Disable the button */
+        				// TODO
         			}
         			@Override
         			public void failure(APICallFailedException e) {
         				Toast.makeText(ViewMeeting.this, "Failed to set user status: " + e, Toast.LENGTH_LONG).show();
         			}
         		});
-				
-				//Uri internalMeetingUri = Uri.parse("content://com.monstersfromtheid.imready/meeting/" + meetingId + "/" + Uri.encode(name)); // TODO hackish
-                //startActivity( new Intent(Intent.ACTION_VIEW, internalMeetingUri, MyMeetings.this, ViewMeeting.class) );
-			}
+        	}
         });
+        getListView().addHeaderView(setReadiness);
         
         final Button addParticipant = (Button)getLayoutInflater().inflate(R.layout.view_meeting_add_participant_button, null);
         addParticipant.setOnClickListener(new OnClickListener() {
