@@ -15,6 +15,7 @@
     <string name="define_account_existing_button">Use Existing Account</string>
 
     <string name="view_meeting_add_participant_button">Add participant...</string>
+    <string name="view_meeting_set_participant_status_button">Become Ready...</string>
     <string name="meetings_create_meeting_button">Create meeting...</string>
     
     <string name="add_participant_user_name_label">User name</string>
