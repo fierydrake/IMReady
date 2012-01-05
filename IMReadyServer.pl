@@ -264,6 +264,7 @@ sub returnMeeting {
     if ( $redis->sismember("util:list:meetings", $meeting) ) {
         $content  = "{\"id\": " . $meeting . ",";
         $content .= " \"name\": \"" . $redis->get("meeting:$meeting:name") . "\",";
+        $content .= " \"state\": \"" . $redis->get("meeting:$meeting:state") . "\",";
         $redis->set("meeting:$meeting:touched" => time);
         # $content = Add state
         my @participants = $redis->smembers("meeting:$meeting:participants");

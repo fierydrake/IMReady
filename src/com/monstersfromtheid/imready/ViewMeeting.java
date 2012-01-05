@@ -35,6 +35,7 @@ public class ViewMeeting extends ListActivity {
     private int meetingId;
     private String meetingName;
     private boolean myStatus = false;
+    View setReadiness;
 
     private class RefreshMeetingDetailsAction extends Action<Meeting> {
         @Override
@@ -52,6 +53,8 @@ public class ViewMeeting extends ListActivity {
             				participant.getUser().getId(), 
             				participant.getState() == Participant.STATE_READY
                         	);
+            	} else {
+            		setMyStatus(participant.getState() == Participant.STATE_READY);
             	}
             }
             adapter.notifyDataSetChanged();
@@ -65,6 +68,7 @@ public class ViewMeeting extends ListActivity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        setReadiness = getLayoutInflater().inflate(R.layout.view_meeting_set_participant_status_button, null);
 
         Uri internalMeetingUri = getIntent().getData();
 
@@ -84,7 +88,7 @@ public class ViewMeeting extends ListActivity {
         meetingName = Uri.decode(m.group(2));
 
         adapter = new SimpleAdapter(this, participants, R.layout.meeting_participant_list_item, from, to);
-        initialiseActivityFromLocalKnowledge(meetingName, meetingId, userNickName, userName);
+        initialiseActivityFromLocalKnowledge(meetingName, meetingId);
         API.performInBackground(new RefreshMeetingDetailsAction());
         adapter.setViewBinder(new SimpleAdapter.ViewBinder() {
             public boolean setViewValue(View view, Object data, String textRepresentation) {
@@ -97,13 +101,10 @@ public class ViewMeeting extends ListActivity {
             }
         });
 
-        final View setReadiness = getLayoutInflater().inflate(R.layout.view_meeting_set_participant_status_button, null);
         final TextView userIdText = (TextView) setReadiness.findViewById(R.id.meeting_participant_my_name);
         userIdText.setText(userNickName + "(" + userName + ")");
-        final TextView readinessText = (TextView) setReadiness.findViewById(R.id.meeting_participant_my_readiness);
-		readinessText.setText("Not ready");
-		readinessText.setTextColor(Color.RED);
-// TODO - The button is overriding the onclick with null.  Fix it
+		setMyStatus(myStatus);
+
         setReadiness.setOnClickListener(new OnClickListener() {
         	public void onClick(View v) {
         		/* We can only set status to ready, so if we already are then we're done. */
@@ -121,11 +122,7 @@ public class ViewMeeting extends ListActivity {
         			@Override
         			public void success(Void result) {
         				/* Set the status colour to green */
-        				readinessText.setText("Ready");
-        				readinessText.setTextColor(Color.GREEN);
-
-        				/* Disable the button */
-        				// TODO
+        				setMyStatus(true);
         			}
         			@Override
         			public void failure(APICallFailedException e) {
@@ -152,9 +149,8 @@ public class ViewMeeting extends ListActivity {
         API.performInBackground(new RefreshMeetingDetailsAction());
     }
 
-    private void initialiseActivityFromLocalKnowledge(String meetingName, int meetingId, String creatorNick, String creatorUserId) {
+    private void initialiseActivityFromLocalKnowledge(String meetingName, int meetingId) {
         updateMeetingInfo(meetingName, meetingId);
-        addParticipant(creatorNick, creatorUserId, false);
         adapter.notifyDataSetChanged();
     }
 
@@ -172,5 +168,16 @@ public class ViewMeeting extends ListActivity {
         userItem.put("name", nick + " (" + id + ")");
         userItem.put("readiness", readiness);
         participants.add(userItem);
+    }
+    
+    private void setMyStatus(boolean status) {
+    	myStatus = status;
+    	
+        TextView setStatus = (TextView) setReadiness.findViewById(R.id.view_meeting_set_participant_status_button);
+        TextView readinessText = (TextView) setReadiness.findViewById(R.id.meeting_participant_my_readiness);
+
+        setStatus.setText( myStatus ? R.string.view_meeting_set_participant_status_button_ready : R.string.view_meeting_set_participant_status_button_not_ready );
+        readinessText.setTextColor( myStatus ? Color.GREEN : Color.RED );
+        readinessText.setText( myStatus ? "Ready" : "Not ready" );
     }
 }

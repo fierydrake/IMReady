@@ -60,7 +60,7 @@ public class MyMeetings extends ListActivity {
             Toast.makeText(MyMeetings.this, "Failed: " + e, Toast.LENGTH_LONG).show();
         }    	
     }
-    
+
 	@Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -140,7 +140,6 @@ public class MyMeetings extends ListActivity {
             // Open the accounts page and blank the "activity history"
             Uri resetAccountDetails = Uri.parse("content://com.monstersfromtheid.imready/util/" + IMReady.ACTIONS_ACOUNT_CHANGE_DETAILS);
             startActivity(new Intent(Intent.ACTION_VIEW, resetAccountDetails, MyMeetings.this, DefineAccount.class));
-            finish();
             return true;
         case R.id.menu_blank:
             SharedPreferences.Editor preferences = getSharedPreferences(IMReady.PREFERENCES_NAME, MODE_PRIVATE).edit();
