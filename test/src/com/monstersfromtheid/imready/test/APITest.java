@@ -95,7 +95,7 @@ public class APITest extends android.test.ActivityInstrumentationTestCase2<Creat
 			assertNotNull("Meeting creator should be a participant of meeting", found);
 			assertEquals("Mr Test A", found.getUser().getDefaultNickname());
 			assertEquals(primaryUserId, found.getUser().getId());
-			assertEquals("Meeting creator should be marked as NOTIFIED after meeting creator", true, found.getNotified());
+			assertEquals("Meeting creator should be marked as NOTIFIED after meeting creation", true, found.getNotified());
 			assertEquals("Meeting creator should be NOT READY after meeting creation", Participant.STATE_NOT_READY, found.getState());
 		} catch (APICallFailedException e) {
 			e.printStackTrace();
