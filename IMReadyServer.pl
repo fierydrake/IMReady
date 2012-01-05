@@ -149,7 +149,7 @@ sub returnMeetings {
     if( defined $meetings[0] ){
         $content  = "[";
         foreach my $meeting (sort @meetings){
-            $content .= "{\"id\": \"" . $meeting . "\", \"name\": \"" . $redis->get("meeting:$meeting:name") . "\"},";
+            $content .= "{\"id\": " . $meeting . ", \"name\": \"" . $redis->get("meeting:$meeting:name") . "\"},"; # FIXME state?
         }
         chop $content;
         $content .= "]";
@@ -222,7 +222,7 @@ sub returnUserMeetings {
     if( defined $meetings[0] ){
         $content  = "[";
         foreach my $meeting (sort @meetings){
-            $content .= "{\"id\": \"" . $meeting . "\", \"name\": \"" . $redis->get("meeting:$meeting:name") . "\"},";
+            $content .= "{\"id\": " . $meeting . ", \"name\": \"" . $redis->get("meeting:$meeting:name") . "\", \"state\": " . $redis->get("meeting:$meeting:state") . "},";
             if( $requestingUserID && $requestingUserID eq $id ) {
                 debug('Setting user <' . $id . '> in meeting <' . $meeting . '> notified to 1');
                 $redis->set("meeting:$meeting:$id:notified", 1);
@@ -264,7 +264,7 @@ sub returnMeeting {
     if ( $redis->sismember("util:list:meetings", $meeting) ) {
         $content  = "{\"id\": " . $meeting . ",";
         $content .= " \"name\": \"" . $redis->get("meeting:$meeting:name") . "\",";
-        $content .= " \"state\": \"" . $redis->get("meeting:$meeting:state") . "\",";
+        $content .= " \"state\": " . $redis->get("meeting:$meeting:state") . ",";
         $redis->set("meeting:$meeting:touched" => time);
         # $content = Add state
         my @participants = $redis->smembers("meeting:$meeting:participants");
@@ -277,8 +277,8 @@ sub returnMeeting {
                 }
                 $content .= "{\"id\": \"" . $participant .
                             "\", \"defaultNickname\": \"" . getNickname($participant) .
-                            "\", \"state\": \"" . $redis->get("meeting:$meeting:$participant:state") .
-                            "\", \"notified\": \"" . $redis->get("meeting:$meeting:$participant:notified") . "\" },";
+                            "\", \"state\": " . $redis->get("meeting:$meeting:$participant:state") .
+                            ", \"notified\": " . ($redis->get("meeting:$meeting:$participant:notified") ? "true" : "false") . " },";
             }
             chop $content;
             $content .= "]";

@@ -7,6 +7,7 @@ import java.util.List;
 import android.app.ListActivity;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
 import android.view.Menu;
@@ -18,6 +19,7 @@ import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
 import android.widget.Button;
 import android.widget.SimpleAdapter;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.monstersfromtheid.imready.client.API;
@@ -29,9 +31,9 @@ public class MyMeetings extends ListActivity {
 	public static final int ACTIVITY_CREATE_MEETING = 0;
 
 	private ArrayList<HashMap<String, ?>> meetings = new ArrayList<HashMap<String, ?>>();
-    private String[] from = new String[] { "name", "participantCount" };
+    private String[] from = new String[] { "name", "readiness" };
     private int[] to = new int[] { R.id.meeting_list_item_name,  
-            R.id.meeting_list_item_participant_count };
+            R.id.meeting_list_item_readiness };
     private SimpleAdapter adapter; 
 
     private class RefreshMeetingsAction extends Action<List<Meeting>> {
@@ -50,7 +52,7 @@ public class MyMeetings extends ListActivity {
                 addMeeting(
                 		meeting.getName(),
                 		meeting.getId(),
-                		1//meeting.getParticipants().size()
+                		meeting.getState() == Meeting.STATE_READY
                 		);
             }
             adapter.notifyDataSetChanged();
@@ -73,7 +75,17 @@ public class MyMeetings extends ListActivity {
         adapter = new SimpleAdapter(this, meetings, R.layout.meeting_list_item, from, to);
 //        initialiseActivityFromLocalKnowledge(meetingName, meetingId, userNickName, userName);
         API.performInBackground(new RefreshMeetingsAction(api));
-        
+        adapter.setViewBinder(new SimpleAdapter.ViewBinder() {
+            public boolean setViewValue(View view, Object data, String textRepresentation) {
+                if (view.getId() == R.id.meeting_list_item_readiness) {
+                    ((TextView)view).setTextColor((Boolean)data ? Color.GREEN : Color.RED);
+                    ((TextView)view).setText((Boolean)data ? "Ready" : "Not ready");
+                    return true;
+                }
+                return false;
+            }
+        });
+
         final Button createMeeting = (Button)getLayoutInflater().inflate(R.layout.meetings_create_meeting_button, null);
         createMeeting.setOnClickListener(new OnClickListener() {
         	public void onClick(View v) {
@@ -118,11 +130,11 @@ public class MyMeetings extends ListActivity {
         meetings.clear();
     }
 
-    private void addMeeting(String name, int meetingId, int participantCount) {
+    private void addMeeting(String name, int meetingId, boolean readiness) {
         HashMap<String, Object> userItem = new HashMap<String, Object>();
         userItem.put("id", meetingId);
         userItem.put("name", name);
-        userItem.put("participantCount", participantCount);
+        userItem.put("readiness", readiness);
         meetings.add(userItem);
     }
 

@@ -108,12 +108,12 @@ public class API {
 	                    participants.add(
 	                        new Participant(
 	                            new User(participantJSON.getString("id"), participantJSON.getString("defaultNickname")),
-	                            participantJSON.getString("state"),
-	                            participantJSON.getString("notified")
+	                            participantJSON.getInt("state"),
+	                            participantJSON.getBoolean("notified")
 	                        )
 	                    );
 	                }
-	                return new Meeting(meetingJSON.getInt("id"), meetingJSON.getString("name"), participants);
+	                return new Meeting(meetingJSON.getInt("id"), meetingJSON.getString("name"), meetingJSON.getInt("state"), participants);
 	            } catch (IllegalArgumentException e) {
 	                e.printStackTrace();
 	                throw new APICallFailedException("Server response invalid: " + e, e);
@@ -166,7 +166,7 @@ public class API {
 //		                    );
 //		                }
 	                	
-	                	meetings.add(new Meeting(meetingJSON.getInt("id"), meetingJSON.getString("name"), null));
+	                	meetings.add(new Meeting(meetingJSON.getInt("id"), meetingJSON.getString("name"), meetingJSON.getInt("state"), null));
 	                }
 	                return meetings;
 	            } catch (IllegalArgumentException e) {
