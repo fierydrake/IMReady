@@ -22,6 +22,10 @@ public class CheckMeetingsService extends IntentService {
 	}
 
 
+	public CheckMeetingsService() {
+		this("CheckMeetingsService");
+	}
+
 	protected void checkMeetings(Intent intent){
 		NotificationManager notMgr = (NotificationManager)getSystemService(Context.NOTIFICATION_SERVICE);
 		
