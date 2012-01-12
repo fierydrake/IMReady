@@ -22,7 +22,6 @@ import com.monstersfromtheid.imready.client.API;
 import com.monstersfromtheid.imready.client.API.Action;
 import com.monstersfromtheid.imready.client.APICallFailedException;
 import com.monstersfromtheid.imready.service.CheckMeetingsAlarmReceiver;
-import com.monstersfromtheid.imready.service.CheckMeetingsBootReceiver;
 
 public class DefineAccount extends Activity {
 
