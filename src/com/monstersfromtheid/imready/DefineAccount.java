@@ -4,10 +4,14 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import android.app.Activity;
+import android.app.AlarmManager;
+import android.app.PendingIntent;
+import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.SystemClock;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
@@ -17,6 +21,8 @@ import android.widget.Toast;
 import com.monstersfromtheid.imready.client.API;
 import com.monstersfromtheid.imready.client.API.Action;
 import com.monstersfromtheid.imready.client.APICallFailedException;
+import com.monstersfromtheid.imready.service.CheckMeetingsAlarmReceiver;
+import com.monstersfromtheid.imready.service.CheckMeetingsBootReceiver;
 
 public class DefineAccount extends Activity {
 
@@ -29,7 +35,19 @@ public class DefineAccount extends Activity {
         super.onCreate(savedInstanceState);
         
         boolean changeAccount = false;
-
+// TODO  - something to guarantee the alarm manager is always going for us.
+        // Does this method always get called?
+        AlarmManager alarm = (AlarmManager)getSystemService(Context.ALARM_SERVICE);
+        Intent i = new Intent(this, CheckMeetingsAlarmReceiver.class);
+	    PendingIntent pi = PendingIntent.getBroadcast(this, 0, i, 0);
+	    
+	    //alarm.cancel(pi);
+	    alarm.setInexactRepeating(AlarmManager.ELAPSED_REALTIME_WAKEUP,
+	    		SystemClock.elapsedRealtime()+60000,
+	    		60000,
+	    		pi);
+        
+        
         Uri accountDetailsAction = getIntent().getData();
         if ( accountDetailsAction != null &&
         	 "content".equals( accountDetailsAction.getScheme() ) &&
