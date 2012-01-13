@@ -64,7 +64,7 @@ public class AddParticipant extends Activity {
     }
 
     private void addParticipant(final int meetingId, final String userId) {
-        final String creatorId = getSharedPreferences(IMReady.PREFERENCES_NAME, MODE_PRIVATE).getString("accountUserName", "");
+        final String creatorId = IMReady.getUserName(this);
         final API api = new API(creatorId);
 
         API.performInBackground(new API.Action<Void>() {

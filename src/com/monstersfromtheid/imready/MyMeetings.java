@@ -67,8 +67,7 @@ public class MyMeetings extends ListActivity {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         
-//        String userNickName = getSharedPreferences(IMReady.PREFERENCES_NAME, MODE_PRIVATE).getString("accountNickName", "");
-        String userName = getSharedPreferences(IMReady.PREFERENCES_NAME, MODE_PRIVATE).getString("accountUserName", "");
+        String userName = IMReady.getUserName(this);
         
         final API api = new API(userName);
 
@@ -109,7 +108,7 @@ public class MyMeetings extends ListActivity {
 	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         /* If returning after ACTIVITY_GOT_ACCOUNT then just exit this Activity */
         if (requestCode == ACTIVITY_CREATE_MEETING) {
-        	String userName = getSharedPreferences(IMReady.PREFERENCES_NAME, MODE_PRIVATE).getString("accountUserName", "");
+        	String userName = IMReady.getUserName(this);
             
             final API api = new API(userName);
             API.performInBackground(new RefreshMeetingsAction(api));
@@ -153,7 +152,7 @@ public class MyMeetings extends ListActivity {
             Uri resetAccountDetails = Uri.parse("content://com.monstersfromtheid.imready/util/" + IMReady.ACTIONS_ACOUNT_CHANGE_DETAILS);
             startActivity(new Intent(Intent.ACTION_VIEW, resetAccountDetails, MyMeetings.this, DefineAccount.class));
             return true;
-        case R.id.menu_blank:
+        case R.id.menu_blank: // TODO This should be removed eventually.
             SharedPreferences.Editor preferences = getSharedPreferences(IMReady.PREFERENCES_NAME, MODE_PRIVATE).edit();
             preferences.remove("accountDefined");
             preferences.remove("accountUserName");

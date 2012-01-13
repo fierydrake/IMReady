@@ -46,7 +46,7 @@ public class CreateMeeting extends Activity {
     }
 
     private void createMeeting(final String name) {
-        final String creatorId = getSharedPreferences(IMReady.PREFERENCES_NAME, MODE_PRIVATE).getString("accountUserName", "");
+        final String creatorId = IMReady.getUserName(this);
         final API api = new API(creatorId);
 
         API.performInBackground(new API.Action<Integer>() {

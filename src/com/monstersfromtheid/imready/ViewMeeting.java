@@ -80,8 +80,8 @@ public class ViewMeeting extends ListActivity {
         Matcher m = p.matcher(meetingPath);
         if (!m.matches()) { return; } // TODO Error handling
 
-        String userNickName = getSharedPreferences(IMReady.PREFERENCES_NAME, MODE_PRIVATE).getString("accountNickName", "");
-        final String userName = getSharedPreferences(IMReady.PREFERENCES_NAME, MODE_PRIVATE).getString("accountUserName", "");
+        String userNickName = IMReady.getNickName(this);
+        final String userName = IMReady.getUserName(this);
         
         api = new API(userName);
         meetingId = Integer.parseInt(m.group(1));

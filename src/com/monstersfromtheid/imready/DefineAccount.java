@@ -68,7 +68,7 @@ public class DefineAccount extends Activity {
         }
         
         /* If we're launched from new.  If an account is already defined, move to meeting list. */
-        if ( !changeAccount && getSharedPreferences(IMReady.PREFERENCES_NAME, MODE_PRIVATE).getBoolean("accountDefined", false)) {
+        if ( !changeAccount && IMReady.isAccountDefined(this) ) {
             startActivityForResult(new Intent(DefineAccount.this, MyMeetings.class), ACTIVITY_GOT_ACCOUNT);
             /* Otherwise, create an account */
         } else {
@@ -79,9 +79,9 @@ public class DefineAccount extends Activity {
             final EditText userName = (EditText) findViewById(R.id.define_account_username);
             final EditText nickName = (EditText) findViewById(R.id.define_account_nickname);
             
-            if ( changeAccount && getSharedPreferences(IMReady.PREFERENCES_NAME, MODE_PRIVATE).getBoolean("accountDefined", false) ){
-            	userName.setText( getSharedPreferences(IMReady.PREFERENCES_NAME, MODE_PRIVATE).getString("accountUserName", "") );
-            	nickName.setText( getSharedPreferences(IMReady.PREFERENCES_NAME, MODE_PRIVATE).getString("accountNickName", "") );
+            if ( changeAccount && IMReady.isAccountDefined(this) ){
+            	userName.setText( IMReady.getUserName(this) );
+            	nickName.setText( IMReady.getNickName(this) );
             }
 
             newAccount.setOnClickListener(new OnClickListener() {
@@ -120,10 +120,7 @@ public class DefineAccount extends Activity {
         /* TODO */
     	final API api = new API(username);
 
-        SharedPreferences.Editor preferences = getSharedPreferences(IMReady.PREFERENCES_NAME, MODE_PRIVATE).edit();
-        preferences.putString("accountUserName", username);
-        preferences.putString("accountNickName", nickname);
-        preferences.commit();
+    	IMReady.setUserAndNickName(username, nickname, this);
 
         API.performInBackground(new Action<Void>() {
             @Override
@@ -138,9 +135,7 @@ public class DefineAccount extends Activity {
 
             @Override
             public void success(Void result) {
-                SharedPreferences.Editor preferences = getSharedPreferences(IMReady.PREFERENCES_NAME, MODE_PRIVATE).edit();
-                preferences.putBoolean("accountDefined", true);
-                preferences.commit();
+                IMReady.setAccountDefined(true, DefineAccount.this);
 
                 /* Now we have an account, we can go to create a meeting */
                 startActivityForResult(new Intent(DefineAccount.this, MyMeetings.class), ACTIVITY_GOT_ACCOUNT);
