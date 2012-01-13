@@ -121,7 +121,7 @@ public class APITest extends android.test.ActivityInstrumentationTestCase2<Creat
 					found = participant;
 				}
 			}
-			assertNotNull("After adding participant they should br in the meeting", found);
+			assertNotNull("After adding participant they should be in the meeting", found);
 			assertEquals("Mr Test B", found.getUser().getDefaultNickname());
 			assertEquals(secondaryUserId, found.getUser().getId());
 			assertEquals("After being added to a meeting, a participant should be marked as NOT NOTIFIED", false, found.getNotified());
@@ -144,6 +144,7 @@ public class APITest extends android.test.ActivityInstrumentationTestCase2<Creat
 			assertNotNull("After being added to a meeting, the meeting should appear in the user's meeting list", found);
 			assertEquals(meetingId, found.getId());
 			assertEquals("Test Meeting", found.getName());
+			assertEquals(2, found.getParticipants().size());
 		} catch (APICallFailedException e) {
 			e.printStackTrace();
 			fail("Failed to read meeting with id '" + meetingId + "': " + e);			

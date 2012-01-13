@@ -153,20 +153,19 @@ public class API {
 	                JSONArray meetingsJSON = (JSONArray)new JSONTokener(body).nextValue();
 	                for (int j=0; j<meetingsJSON.length(); j++) {
 	                	JSONObject meetingJSON = meetingsJSON.getJSONObject(j);
-//		                ArrayList<Participant> participants = new ArrayList<Participant>();
-//		                JSONArray participantsJSON = meetingJSON.getJSONArray("participants");
-//		                for (int i=0; i<participantsJSON.length(); i++) {
-//		                    JSONObject participantJSON = participantsJSON.getJSONObject(i);
-//		                    participants.add(
-//		                        new Participant(
-//		                            new User(participantJSON.getString("id"), participantJSON.getString("defaultNickname")),
-//		                            participantJSON.getString("state"),
-//		                            participantJSON.getString("notified")
-//		                        )
-//		                    );
-//		                }
-	                	
-	                	meetings.add(new Meeting(meetingJSON.getInt("id"), meetingJSON.getString("name"), meetingJSON.getInt("state"), null));
+	                	ArrayList<Participant> participants = new ArrayList<Participant>();
+		                JSONArray participantsJSON = meetingJSON.getJSONArray("participants");
+		                for (int i=0; i<participantsJSON.length(); i++) {
+		                    JSONObject participantJSON = participantsJSON.getJSONObject(i);
+		                    participants.add(
+		                        new Participant(
+		                            new User(participantJSON.getString("id"), participantJSON.getString("defaultNickname")),
+		                            participantJSON.getInt("state"),
+		                            participantJSON.getBoolean("notified")
+		                        )
+		                    );
+		                }
+	                	meetings.add(new Meeting(meetingJSON.getInt("id"), meetingJSON.getString("name"), meetingJSON.getInt("state"), participants));
 	                }
 	                return meetings;
 	            } catch (IllegalArgumentException e) {

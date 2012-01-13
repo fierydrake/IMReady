@@ -30,7 +30,11 @@
       <dd>On success, responds with HTTP status code 200 (OK) and a list of
           meetings that user :uid: is a participant in as a JSON array, each
           element of the array is a hash with keys <code>id</code>, 
-          <code>name</code> and <code>state</code>.
+          <code>name</code>, <code>state</code> and <code>participants</code>.
+          <br>The value of the participants key should be an array where 
+          each element represents a meeting participant as a hash with keys 
+          <code>id</code>, <code>defaultNickname</code>, <code>state</code>
+          and <code>notified</code>.
           <br>On failure, responds with a HTTP status code that is not 200.
           <p>Failure cases include: 
              <br>User id not found => HTTP 404 (Not Found)
@@ -43,7 +47,8 @@
           <code>participants</code>.
           <br>The value of the participants key should be an array where 
           each element represents a meeting participant as a hash with keys 
-          <code>id</code> and <code>defaultNickname</code>.
+          <code>id</code>, <code>defaultNickname</code>, <code>state</code>
+          and <code>notified</code>.
           <br>On failure, responds with a HTTP status code that is not 200.
           <p>Failure cases include: 
              <br>Meeting not found => HTTP 404 (Not Found)

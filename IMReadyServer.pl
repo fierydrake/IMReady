@@ -222,12 +222,30 @@ sub returnUserMeetings {
     if( defined $meetings[0] ){
         $content  = "[";
         foreach my $meeting (sort @meetings){
-            $content .= "{\"id\": " . $meeting . ", \"name\": \"" . $redis->get("meeting:$meeting:name") . "\", \"state\": " . $redis->get("meeting:$meeting:state") . "},";
+            $content .= "{\"id\": " . $meeting . ",";
+            $content .= " \"name\": \"" . $redis->get("meeting:$meeting:name") . "\",";
+            $content .= " \"state\": " . $redis->get("meeting:$meeting:state") . ",";
             if( $requestingUserID && $requestingUserID eq $id ) {
                 debug('Setting user <' . $id . '> in meeting <' . $meeting . '> notified to 1');
                 $redis->set("meeting:$meeting:$id:notified", 1);
-                $redis->set("meeting:$meeting:touched" => time);
+                $redis->set("meeting:$meeting:touched" => time); 
+                # TODO: Decide when a meeting counts as being touched, atm this is probably inconsistent with returnMeeting()
             }
+            my @participants = $redis->smembers("meeting:$meeting:participants");
+            $content .= " \"participants\": [";
+            foreach my $participant (sort @participants){
+                if( $requestingUserID && $requestingUserID eq $participant ) {
+                    debug('Setting user <' . $participant . '> in meeting <' . $meeting . '> notified to 1');
+                    $redis->set("meeting:$meeting:$participant:notified", 1);
+                }
+                $content .= "{\"id\": \"" . $participant . "\",";
+                $content .= " \"defaultNickname\": \"" . getNickname($participant) . "\",";
+                $content .= " \"state\": " . $redis->get("meeting:$meeting:$participant:state") . ",";
+                $content .= " \"notified\": " . ($redis->get("meeting:$meeting:$participant:notified") ? "true" : "false") . " },";
+            }
+            chop $content;
+            $content .= "]";
+            $content .= "},";
         }
         chop $content;
         $content .= "]";
@@ -268,23 +286,19 @@ sub returnMeeting {
         $redis->set("meeting:$meeting:touched" => time);
         # $content = Add state
         my @participants = $redis->smembers("meeting:$meeting:participants");
-        if ( scalar @participants > 0 ) {
-            $content .= " \"participants\": [";
-            foreach my $participant (sort @participants){
-                if( $requestingUserID && $requestingUserID eq $participant ) {
-                    debug('Setting user <' . $participant . '> in meeting <' . $meeting . '> notified to 1');
-                    $redis->set("meeting:$meeting:$participant:notified", 1);
-                }
-                $content .= "{\"id\": \"" . $participant .
-                            "\", \"defaultNickname\": \"" . getNickname($participant) .
-                            "\", \"state\": " . $redis->get("meeting:$meeting:$participant:state") .
-                            ", \"notified\": " . ($redis->get("meeting:$meeting:$participant:notified") ? "true" : "false") . " },";
+        $content .= " \"participants\": [";
+        foreach my $participant (sort @participants){
+            if( $requestingUserID && $requestingUserID eq $participant ) {
+                debug('Setting user <' . $participant . '> in meeting <' . $meeting . '> notified to 1');
+                $redis->set("meeting:$meeting:$participant:notified", 1);
             }
-            chop $content;
-            $content .= "]";
-        } else {
-            $content .= " \"participants\": null";            
+            $content .= "{\"id\": \"" . $participant . "\",";
+            $content .= " \"defaultNickname\": \"" . getNickname($participant) . "\",";
+            $content .= " \"state\": " . $redis->get("meeting:$meeting:$participant:state") . ",";
+            $content .= " \"notified\": " . ($redis->get("meeting:$meeting:$participant:notified") ? "true" : "false") . " },";
         }
+        chop $content;
+        $content .= "]";
         $content .= "}";
     } else {
         $content  = "{\"id\": null}";
