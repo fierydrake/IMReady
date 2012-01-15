@@ -14,8 +14,8 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
 
-import com.monstersfromtheid.imready.client.API;
-import com.monstersfromtheid.imready.client.APICallFailedException;
+import com.monstersfromtheid.imready.client.ServerAPI;
+import com.monstersfromtheid.imready.client.ServerAPICallFailedException;
 
 public class AddParticipant extends Activity {
 
@@ -65,11 +65,11 @@ public class AddParticipant extends Activity {
 
     private void addParticipant(final int meetingId, final String userId) {
         final String creatorId = IMReady.getUserName(this);
-        final API api = new API(creatorId);
+        final ServerAPI api = new ServerAPI(creatorId);
 
-        API.performInBackground(new API.Action<Void>() {
+        ServerAPI.performInBackground(new ServerAPI.Action<Void>() {
             @Override
-            public Void action() throws APICallFailedException {
+            public Void action() throws ServerAPICallFailedException {
                 api.addMeetingParticipant(meetingId, userId);
                 return null;
             }
@@ -79,7 +79,7 @@ public class AddParticipant extends Activity {
                 finish();
             }
             @Override
-            public void failure(APICallFailedException e) {
+            public void failure(ServerAPICallFailedException e) {
                 Toast.makeText(AddParticipant.this, "Failed: " + e, Toast.LENGTH_LONG).show();
             }
         });

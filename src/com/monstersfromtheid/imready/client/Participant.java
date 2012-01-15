@@ -12,6 +12,13 @@ public class Participant {
         this.state = state;
         this.notified = notified;
     }
+    
+    @Override
+    public boolean equals(Object o) {
+    	return ( this.state == ((Participant)o).state )
+    		&& ( this.notified == ((Participant)o).notified )
+    		&& ( this.user.equals( ((Participant)o).user ));
+    }
 
     public User getUser() { return user; }
     public int getState() { return state; }

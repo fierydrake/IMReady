@@ -1,6 +1,7 @@
 package com.monstersfromtheid.imready.client;
 
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 
 public class Meeting {
@@ -19,6 +20,14 @@ public class Meeting {
         if (participants != null) {
         	this.participants = Collections.unmodifiableList(participants);
         }
+    }
+    
+    @Override
+    public boolean equals(Object o) {
+    	return (this.id == ((Meeting)o).id)
+    	    && (this.name.equals(((Meeting)o).name))
+    	    && (this.state == ((Meeting)o).state)
+    	    && (this.participants.equals( ((Meeting)o).participants ) );
     }
 
     public int getId() { return id; }

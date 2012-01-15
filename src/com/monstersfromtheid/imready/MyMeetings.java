@@ -22,9 +22,11 @@ import android.widget.SimpleAdapter;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.monstersfromtheid.imready.client.API;
-import com.monstersfromtheid.imready.client.API.Action;
-import com.monstersfromtheid.imready.client.APICallFailedException;
+import com.monstersfromtheid.imready.client.MessageAPI;
+import com.monstersfromtheid.imready.client.MessageAPIException;
+import com.monstersfromtheid.imready.client.ServerAPI;
+import com.monstersfromtheid.imready.client.ServerAPI.Action;
+import com.monstersfromtheid.imready.client.ServerAPICallFailedException;
 import com.monstersfromtheid.imready.client.Meeting;
 
 public class MyMeetings extends ListActivity {
@@ -37,13 +39,18 @@ public class MyMeetings extends ListActivity {
     private SimpleAdapter adapter; 
 
     private class RefreshMeetingsAction extends Action<List<Meeting>> {
-    	private API api;
-    	public RefreshMeetingsAction(API api) {
+    	private ServerAPI api;
+    	public RefreshMeetingsAction(ServerAPI api) {
     		this.api = api;
     	}
         @Override
-        public List<Meeting> action() throws APICallFailedException {
-            return api.userMeetings(api.getRequestingUserId());
+        public List<Meeting> action() throws ServerAPICallFailedException {
+        	try {
+        		return MessageAPI.userMeetings( api.userMeetings(api.getRequestingUserId()) );
+        	} catch (MessageAPIException e) {
+        		// Just a quick hack to get me beyond this. 
+				throw new ServerAPICallFailedException(e.getMessage(), e);
+			}
         }
         @Override
         public void success(List<Meeting> meetings) {
@@ -58,7 +65,7 @@ public class MyMeetings extends ListActivity {
             adapter.notifyDataSetChanged();
         }
         @Override
-        public void failure(APICallFailedException e) {
+        public void failure(ServerAPICallFailedException e) {
             Toast.makeText(MyMeetings.this, "Failed: " + e, Toast.LENGTH_LONG).show();
         }    	
     }
@@ -69,11 +76,11 @@ public class MyMeetings extends ListActivity {
         
         String userName = IMReady.getUserName(this);
         
-        final API api = new API(userName);
+        final ServerAPI api = new ServerAPI(userName);
 
         adapter = new SimpleAdapter(this, meetings, R.layout.meeting_list_item, from, to);
 //        initialiseActivityFromLocalKnowledge(meetingName, meetingId, userNickName, userName);
-        API.performInBackground(new RefreshMeetingsAction(api));
+        ServerAPI.performInBackground(new RefreshMeetingsAction(api));
         adapter.setViewBinder(new SimpleAdapter.ViewBinder() {
             public boolean setViewValue(View view, Object data, String textRepresentation) {
                 if (view.getId() == R.id.meeting_list_item_readiness) {
@@ -110,8 +117,8 @@ public class MyMeetings extends ListActivity {
         if (requestCode == ACTIVITY_CREATE_MEETING) {
         	String userName = IMReady.getUserName(this);
             
-            final API api = new API(userName);
-            API.performInBackground(new RefreshMeetingsAction(api));
+            final ServerAPI api = new ServerAPI(userName);
+            ServerAPI.performInBackground(new RefreshMeetingsAction(api));
 
             if(resultCode == RESULT_OK) {
             	int meetingId = data.getIntExtra(IMReady.RETURNS_MEETING_ID, -1);

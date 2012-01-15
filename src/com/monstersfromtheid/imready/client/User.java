@@ -8,6 +8,11 @@ public class User {
         this.id = id;
         this.defaultNickname = defaultNickname;
     }
+    
+    @Override
+    public boolean equals(Object o) {
+    	return this.id.equals( ((User)o).id ) && this.defaultNickname.equals( ((User)o).defaultNickname );
+    }
 
     public String getId() { return id; }
     public String getDefaultNickname() { return defaultNickname; }

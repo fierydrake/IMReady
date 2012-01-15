@@ -27,7 +27,7 @@ import android.os.Handler;
 
 import com.monstersfromtheid.imready.IMReady;
 
-public class API {
+public class ServerAPI {
 	public abstract static class Action<T> implements Runnable {
 		final Handler handler = new Handler();
 		public void run() {
@@ -36,16 +36,16 @@ public class API {
 				handler.post(new Runnable() {
 					public void run() { success(result); }
 				});
-			} catch (final APICallFailedException e) {
+			} catch (final ServerAPICallFailedException e) {
 				e.printStackTrace();
 				handler.post(new Runnable() {
 					public void run() { failure(e); }
 				});
 			}
 		}
-		public abstract T action() throws APICallFailedException;
+		public abstract T action() throws ServerAPICallFailedException;
 		public abstract void success(T result);
-		public abstract void failure(APICallFailedException e);
+		public abstract void failure(ServerAPICallFailedException e);
 	}
 	public static void performInBackground(Action<?> action) {
 		new Thread(action).start();
@@ -55,13 +55,13 @@ public class API {
 	
 	private String requestingUserId;
 	
-	public API(String requestingUserId) {
+	public ServerAPI(String requestingUserId) {
 		this.requestingUserId = requestingUserId;
 	}
 	public String getRequestingUserId() { return requestingUserId; }
 	
 	// GET
-	public void user(String id) throws APICallFailedException {
+	public void user(String id) throws ServerAPICallFailedException {
     	final AndroidHttpClient http = AndroidHttpClient.newInstance(IMReady.CLIENT_HTTP_NAME);
 		try {
 			URI uri = new URI(SERVER_URI).resolve("user/" + id);
@@ -72,22 +72,22 @@ public class API {
 	    	int status = response.getStatusLine().getStatusCode();
 	    	switch (status) {
 	    	case 200: return; // OK
-	    	case 404: throw new APICallFailedException("User id '" + id + "' not found");
-	    	case 500: throw new APICallFailedException("Internal error on server");
-	    	default: throw new APICallFailedException("Server returned unknown error: " + status);
+	    	case 404: throw new ServerAPICallFailedException("User id '" + id + "' not found");
+	    	case 500: throw new ServerAPICallFailedException("Internal error on server");
+	    	default: throw new ServerAPICallFailedException("Server returned unknown error: " + status);
 	    	}
 		} catch (URISyntaxException e) {
-			throw new APICallFailedException("[Internal] Server URI invalid", e);
+			throw new ServerAPICallFailedException("[Internal] Server URI invalid", e);
 		} catch (UnsupportedEncodingException e) {
-			throw new APICallFailedException("[Internal] Unsupported character encoding for form values", e);
+			throw new ServerAPICallFailedException("[Internal] Unsupported character encoding for form values", e);
 	   	} catch (IOException e) {
-	   		throw new APICallFailedException("Server returned an invalid response", e);
+	   		throw new ServerAPICallFailedException("Server returned an invalid response", e);
     	} finally {
 			http.close();
 		}				
 	}
 	
-	public Meeting meeting(int id) throws APICallFailedException {
+	public Meeting meeting(int id) throws ServerAPICallFailedException {
 	    final AndroidHttpClient http = AndroidHttpClient.newInstance(IMReady.CLIENT_HTTP_NAME);
 	    try {
 	        URI uri = new URI(SERVER_URI).resolve("meeting/" + id);
@@ -116,27 +116,27 @@ public class API {
 	                return new Meeting(meetingJSON.getInt("id"), meetingJSON.getString("name"), meetingJSON.getInt("state"), participants);
 	            } catch (IllegalArgumentException e) {
 	                e.printStackTrace();
-	                throw new APICallFailedException("Server response invalid: " + e, e);
+	                throw new ServerAPICallFailedException("Server response invalid: " + e, e);
 	            } catch (JSONException e) {
 	                e.printStackTrace();
-	                throw new APICallFailedException("Server response invalid: " + e, e);
+	                throw new ServerAPICallFailedException("Server response invalid: " + e, e);
 	            }
-	        case 404: throw new APICallFailedException("Meeting with id '" + id + "' not found");
-	        case 500: throw new APICallFailedException("Internal error on server");
-	        default: throw new APICallFailedException("Server returned unknown error: " + status);
+	        case 404: throw new ServerAPICallFailedException("Meeting with id '" + id + "' not found");
+	        case 500: throw new ServerAPICallFailedException("Internal error on server");
+	        default: throw new ServerAPICallFailedException("Server returned unknown error: " + status);
 	        }
 	    } catch (URISyntaxException e) {
-	        throw new APICallFailedException("[Internal] Server URI invalid", e);
+	        throw new ServerAPICallFailedException("[Internal] Server URI invalid", e);
 	    } catch (UnsupportedEncodingException e) {
-	        throw new APICallFailedException("[Internal] Unsupported character encoding for form values", e);
+	        throw new ServerAPICallFailedException("[Internal] Unsupported character encoding for form values", e);
 	    } catch (IOException e) {
-	        throw new APICallFailedException("Server returned an invalid response", e);
+	        throw new ServerAPICallFailedException("Server returned an invalid response", e);
 	    } finally {
 	        http.close();
 	    }
 	}
 
-	public List<Meeting> userMeetings(String userId) throws APICallFailedException {
+	public String userMeetings(String userId) throws ServerAPICallFailedException {
 	    final AndroidHttpClient http = AndroidHttpClient.newInstance(IMReady.CLIENT_HTTP_NAME);
 	    try {
 	        URI uri = new URI(SERVER_URI).resolve("meetings/" + userId);
@@ -149,42 +149,27 @@ public class API {
 	        case 200: // OK
 	            String body = new BufferedReader(new InputStreamReader(response.getEntity().getContent()), 2048).readLine();
 	            try {
-	            	ArrayList<Meeting> meetings = new ArrayList<Meeting>();
-	                JSONArray meetingsJSON = (JSONArray)new JSONTokener(body).nextValue();
-	                for (int j=0; j<meetingsJSON.length(); j++) {
-	                	JSONObject meetingJSON = meetingsJSON.getJSONObject(j);
-	                	ArrayList<Participant> participants = new ArrayList<Participant>();
-		                JSONArray participantsJSON = meetingJSON.getJSONArray("participants");
-		                for (int i=0; i<participantsJSON.length(); i++) {
-		                    JSONObject participantJSON = participantsJSON.getJSONObject(i);
-		                    participants.add(
-		                        new Participant(
-		                            new User(participantJSON.getString("id"), participantJSON.getString("defaultNickname")),
-		                            participantJSON.getInt("state"),
-		                            participantJSON.getBoolean("notified")
-		                        )
-		                    );
-		                }
-	                	meetings.add(new Meeting(meetingJSON.getInt("id"), meetingJSON.getString("name"), meetingJSON.getInt("state"), participants));
-	                }
-	                return meetings;
+	            	// TODO - check return is valid JSON?
+
+	            	JSONArray meetingsJSON = (JSONArray)new JSONTokener(body).nextValue();
+	            	return body;
 	            } catch (IllegalArgumentException e) {
 	                e.printStackTrace();
-	                throw new APICallFailedException("Server response invalid: " + e, e);
+	                throw new ServerAPICallFailedException("Server response invalid: " + e, e);
 	            } catch (JSONException e) {
 	                e.printStackTrace();
-	                throw new APICallFailedException("Server response invalid: " + e, e);
+	                throw new ServerAPICallFailedException("Server response invalid: " + e, e);
 	            }
-	        case 404: throw new APICallFailedException("User with id '" + userId + "' not found");
-	        case 500: throw new APICallFailedException("Internal error on server");
-	        default: throw new APICallFailedException("Server returned unknown error: " + status);
+	        case 404: throw new ServerAPICallFailedException("User with id '" + userId + "' not found");
+	        case 500: throw new ServerAPICallFailedException("Internal error on server");
+	        default: throw new ServerAPICallFailedException("Server returned unknown error: " + status);
 	        }
 	    } catch (URISyntaxException e) {
-	        throw new APICallFailedException("[Internal] Server URI invalid", e);
+	        throw new ServerAPICallFailedException("[Internal] Server URI invalid", e);
 	    } catch (UnsupportedEncodingException e) {
-	        throw new APICallFailedException("[Internal] Unsupported character encoding for form values", e);
+	        throw new ServerAPICallFailedException("[Internal] Unsupported character encoding for form values", e);
 	    } catch (IOException e) {
-	        throw new APICallFailedException("Server returned an invalid response", e);
+	        throw new ServerAPICallFailedException("Server returned an invalid response", e);
 	    } finally {
 	        http.close();
 	    }
@@ -195,7 +180,7 @@ public class API {
 //	}
 	
 	// POST
-	public void createUser(String id, String defaultNickname) throws APICallFailedException {
+	public void createUser(String id, String defaultNickname) throws ServerAPICallFailedException {
     	final AndroidHttpClient http = AndroidHttpClient.newInstance(IMReady.CLIENT_HTTP_NAME);
 		try {
 			URI uri = new URI(SERVER_URI).resolve("users");
@@ -211,22 +196,22 @@ public class API {
 	    	String msg = response.getEntity().toString(); // FIXME
 	    	switch (status) {
 	    	case 200: return; // OK
-	    	case 400: throw new APICallFailedException(msg + " '" + id + "'");
-	    	case 500: throw new APICallFailedException("Internal error on server");
-	    	default: throw new APICallFailedException("Server returned unknown error: " + status);
+	    	case 400: throw new ServerAPICallFailedException(msg + " '" + id + "'");
+	    	case 500: throw new ServerAPICallFailedException("Internal error on server");
+	    	default: throw new ServerAPICallFailedException("Server returned unknown error: " + status);
 	    	}
 		} catch (URISyntaxException e) {
-			throw new APICallFailedException("[Internal] Server URI invalid", e);
+			throw new ServerAPICallFailedException("[Internal] Server URI invalid", e);
 		} catch (UnsupportedEncodingException e) {
-			throw new APICallFailedException("[Internal] Unsupported character encoding for form values", e);
+			throw new ServerAPICallFailedException("[Internal] Unsupported character encoding for form values", e);
 	   	} catch (IOException e) {
-	   		throw new APICallFailedException("Server returned an invalid response", e);
+	   		throw new ServerAPICallFailedException("Server returned an invalid response", e);
     	} finally {
 			http.close();
 		}		
 	}
 	
-	public int createMeeting(String creatorId, String name) throws APICallFailedException {
+	public int createMeeting(String creatorId, String name) throws ServerAPICallFailedException {
     	final AndroidHttpClient http = AndroidHttpClient.newInstance(IMReady.CLIENT_HTTP_NAME);
     	String body = null;
     	String id = null;
@@ -247,29 +232,29 @@ public class API {
 		    	body = new BufferedReader(new InputStreamReader(response.getEntity().getContent()), 2048).readLine();
 		    	id = ((JSONObject)new JSONTokener(body).nextValue()).getString("id");
 		    	return Integer.parseInt(id);
-	    	case 404: throw new APICallFailedException("User id not found '" + id + "'");
-	    	case 500: throw new APICallFailedException("Internal error on server");
-	    	default: throw new APICallFailedException("Server returned unknown error: " + status);
+	    	case 404: throw new ServerAPICallFailedException("User id not found '" + id + "'");
+	    	case 500: throw new ServerAPICallFailedException("Internal error on server");
+	    	default: throw new ServerAPICallFailedException("Server returned unknown error: " + status);
 	    	}
 		} catch (URISyntaxException e) {
-			throw new APICallFailedException("[Internal] Server URI invalid", e);
+			throw new ServerAPICallFailedException("[Internal] Server URI invalid", e);
 		} catch (UnsupportedEncodingException e) {
-			throw new APICallFailedException("[Internal] Unsupported character encoding for form values", e);
+			throw new ServerAPICallFailedException("[Internal] Unsupported character encoding for form values", e);
 		} catch (NumberFormatException e) {
     		String bodyAsString = (body == null) ? ("null") : ("'" + body + "'");
-    		throw new APICallFailedException("Server returned an invalid meeting id: '" + bodyAsString + "'" , e);
+    		throw new ServerAPICallFailedException("Server returned an invalid meeting id: '" + bodyAsString + "'" , e);
     	} catch (JSONException e) {
     		String idAsString = (id == null) ? ("null") : ("'" + id + "'");
-    		throw new APICallFailedException("Server returned an invalid response: '" + idAsString + "'" , e);
+    		throw new ServerAPICallFailedException("Server returned an invalid response: '" + idAsString + "'" , e);
 	   	} catch (IOException e) {
-	   		throw new APICallFailedException("Server returned an invalid response", e);
+	   		throw new ServerAPICallFailedException("Server returned an invalid response", e);
     	} finally {
 			http.close();
 		}
 	}
 	
 	// POST
-	public void addMeetingParticipant(int meetingId, String userId) throws APICallFailedException {
+	public void addMeetingParticipant(int meetingId, String userId) throws ServerAPICallFailedException {
     	final AndroidHttpClient http = AndroidHttpClient.newInstance(IMReady.CLIENT_HTTP_NAME);
 		try {
 			URI uri = new URI(SERVER_URI).resolve("meeting/" + meetingId + "/participants");
@@ -284,23 +269,23 @@ public class API {
 	    	int status = response.getStatusLine().getStatusCode();
 	    	switch (status) {
 	    	case 200: return; // OK
-	    	case 404: throw new APICallFailedException("Meeting or user id not found ('" + meetingId + "', '" + userId + "')"); // TODO Detect which is not found
-	    	case 500: throw new APICallFailedException("Internal error on server");
-	    	default: throw new APICallFailedException("Server returned unknown error: " + status);
+	    	case 404: throw new ServerAPICallFailedException("Meeting or user id not found ('" + meetingId + "', '" + userId + "')"); // TODO Detect which is not found
+	    	case 500: throw new ServerAPICallFailedException("Internal error on server");
+	    	default: throw new ServerAPICallFailedException("Server returned unknown error: " + status);
 	    	}
 		} catch (URISyntaxException e) {
-			throw new APICallFailedException("[Internal] Server URI invalid", e);
+			throw new ServerAPICallFailedException("[Internal] Server URI invalid", e);
 		} catch (UnsupportedEncodingException e) {
-			throw new APICallFailedException("[Internal] Unsupported character encoding for form values", e);
+			throw new ServerAPICallFailedException("[Internal] Unsupported character encoding for form values", e);
 	   	} catch (IOException e) {
-	   		throw new APICallFailedException("Server returned an invalid response", e);
+	   		throw new ServerAPICallFailedException("Server returned an invalid response", e);
     	} finally {
 			http.close();
 		}
 	}
 
 	// PUT
-	public void ready(int meetingId, String userId) throws APICallFailedException {
+	public void ready(int meetingId, String userId) throws ServerAPICallFailedException {
 		final AndroidHttpClient http = AndroidHttpClient.newInstance(IMReady.CLIENT_HTTP_NAME);
 		try {
 			URI uri = new URI(SERVER_URI).resolve("meeting/" + meetingId + "/participant/" + userId);
@@ -315,24 +300,24 @@ public class API {
 	    	int status = response.getStatusLine().getStatusCode();
 	    	switch (status) {
 	    	case 200: return; // OK
-	    	case 400: throw new APICallFailedException("User ('" + userId + "') is not a member of meeting ('" + meetingId + "')");
-	    	case 404: throw new APICallFailedException("Meeting or user id not found ('" + meetingId + "', '" + userId + "')"); // TODO Detect which is not found
-	    	case 500: throw new APICallFailedException("Internal error on server");
-	    	default: throw new APICallFailedException("Server returned unknown error: " + status);
+	    	case 400: throw new ServerAPICallFailedException("User ('" + userId + "') is not a member of meeting ('" + meetingId + "')");
+	    	case 404: throw new ServerAPICallFailedException("Meeting or user id not found ('" + meetingId + "', '" + userId + "')"); // TODO Detect which is not found
+	    	case 500: throw new ServerAPICallFailedException("Internal error on server");
+	    	default: throw new ServerAPICallFailedException("Server returned unknown error: " + status);
 	    	}
 		} catch (URISyntaxException e) {
-			throw new APICallFailedException("[Internal] Server URI invalid", e);
+			throw new ServerAPICallFailedException("[Internal] Server URI invalid", e);
 		} catch (UnsupportedEncodingException e) {
-			throw new APICallFailedException("[Internal] Unsupported character encoding for form values", e);
+			throw new ServerAPICallFailedException("[Internal] Unsupported character encoding for form values", e);
 	   	} catch (IOException e) {
-	   		throw new APICallFailedException("Server returned an invalid response", e);
+	   		throw new ServerAPICallFailedException("Server returned an invalid response", e);
     	} finally {
 			http.close();
 		}
 	}
 	
 	// DELETE
-	public void removeMeetingParticipant(int meetingId, String userId) throws APICallFailedException {
+	public void removeMeetingParticipant(int meetingId, String userId) throws ServerAPICallFailedException {
     	final AndroidHttpClient http = AndroidHttpClient.newInstance(IMReady.CLIENT_HTTP_NAME);
 		try {
 			URI uri = new URI(SERVER_URI).resolve("meeting/" + meetingId + "/participant/" + userId);
@@ -344,16 +329,16 @@ public class API {
 	    	int status = response.getStatusLine().getStatusCode();
 	    	switch (status) {
 	    	case 200: return; // OK
-	    	case 404: throw new APICallFailedException("Meeting or user id not found ('" + meetingId + "', '" + userId + "')"); // TODO Detect which is not found
-	    	case 500: throw new APICallFailedException("Internal error on server");
-	    	default: throw new APICallFailedException("Server returned unknown error: " + status);
+	    	case 404: throw new ServerAPICallFailedException("Meeting or user id not found ('" + meetingId + "', '" + userId + "')"); // TODO Detect which is not found
+	    	case 500: throw new ServerAPICallFailedException("Internal error on server");
+	    	default: throw new ServerAPICallFailedException("Server returned unknown error: " + status);
 	    	}
 		} catch (URISyntaxException e) {
-			throw new APICallFailedException("[Internal] Server URI invalid", e);
+			throw new ServerAPICallFailedException("[Internal] Server URI invalid", e);
 		} catch (UnsupportedEncodingException e) {
-			throw new APICallFailedException("[Internal] Unsupported character encoding for form values", e);
+			throw new ServerAPICallFailedException("[Internal] Unsupported character encoding for form values", e);
 	   	} catch (IOException e) {
-	   		throw new APICallFailedException("Server returned an invalid response", e);
+	   		throw new ServerAPICallFailedException("Server returned an invalid response", e);
     	} finally {
 			http.close();
 		}

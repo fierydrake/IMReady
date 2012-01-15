@@ -1,8 +1,14 @@
 package com.monstersfromtheid.imready;
 
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+
 import android.content.Context;
 import android.content.ContextWrapper;
 import android.content.SharedPreferences;
+
+import com.monstersfromtheid.imready.client.Meeting;
 
 public class IMReady {
 	public static final String PREFERENCES_NAME = "IMReadyPrefs";
@@ -54,4 +60,55 @@ public class IMReady {
         preferences.putString(PREFERENCES_KEYS_MEETING_JSON, meetings);
         preferences.commit();
 	}
+	
+	public static final List<Meeting> newMeetings(List<Meeting> knownMeetings, List<Meeting> latestMeetings){
+		ArrayList <Meeting> newMeetings = new ArrayList<Meeting>();
+		
+		Iterator<Meeting> iterLatest = latestMeetings.iterator();
+		while(iterLatest.hasNext()){
+			boolean newMeetingFlag = true;
+			Meeting thisLatestMeeting = (Meeting)iterLatest.next();
+			int thisLatestMeetingId = thisLatestMeeting.getId();
+
+			Iterator<Meeting> iterKnown = knownMeetings.iterator();
+			while(iterKnown.hasNext()){
+				int thisKnownMeetingId = ((Meeting)iterKnown.next()).getId();
+				
+				if( thisLatestMeetingId == thisKnownMeetingId ) {
+					newMeetingFlag = false;
+				}
+			}
+			
+			if(newMeetingFlag){
+				newMeetings.add(thisLatestMeeting);
+			}
+		}
+		
+		return newMeetings;
+	}
+	
+	public static final List<Meeting> changedMeetings(List<Meeting> knownMeetings, List<Meeting> latestMeetings){
+		ArrayList <Meeting> changedMeetings = new ArrayList<Meeting>();
+		
+		Iterator<Meeting> iterKnown = knownMeetings.iterator();
+		while(iterKnown.hasNext()){
+			Meeting thisKnownMeeting = (Meeting)iterKnown.next();
+			int thisKnownMeetingId = thisKnownMeeting.getId();
+
+			Iterator<Meeting> iterLatest = latestMeetings.iterator();
+			while(iterLatest.hasNext()){
+				Meeting thisLatestMeeting = ((Meeting)iterLatest.next());
+				int thisLatestMeetingId = thisLatestMeeting.getId();
+
+				if( thisLatestMeetingId == thisKnownMeetingId ) {
+					if( ! thisKnownMeeting.equals(thisLatestMeeting) ){
+						changedMeetings.add(thisLatestMeeting);
+					}
+				}
+			}
+		}
+		
+		return changedMeetings;
+	}
 }
+

@@ -4,17 +4,17 @@ import java.util.List;
 import java.util.UUID;
 
 import com.monstersfromtheid.imready.CreateMeeting;
-import com.monstersfromtheid.imready.client.API;
-import com.monstersfromtheid.imready.client.APICallFailedException;
+import com.monstersfromtheid.imready.client.ServerAPI;
+import com.monstersfromtheid.imready.client.ServerAPICallFailedExceptioneption;
 import com.monstersfromtheid.imready.client.Meeting;
 import com.monstersfromtheid.imready.client.Participant;
 
-public class APITest extends android.test.ActivityInstrumentationTestCase2<CreateMeeting> {
-	private API api;
+public class ServerAPITest extends android.test.ActivityInstrumentationTestCase2<CreateMeeting> {
+	private ServerAPI api;
 	private String primaryUserId;
 	private String secondaryUserId;
 
-	public APITest() {
+	public ServerAPITest() {
 		super("com.monstersfromtheid.imready", CreateMeeting.class);
 	}
 
@@ -23,7 +23,7 @@ public class APITest extends android.test.ActivityInstrumentationTestCase2<Creat
 		primaryUserId = "testuserA_" + suffix;
 		secondaryUserId = "testuserB_" + suffix;
 		
-		api = new API(primaryUserId);
+		api = new ServerAPI(primaryUserId);
 	}
 	
 	public void testUserResource() {
@@ -32,7 +32,7 @@ public class APITest extends android.test.ActivityInstrumentationTestCase2<Creat
 		 */
 		try {
 			api.createUser(primaryUserId, "Mr Test");
-		} catch (APICallFailedException e) {
+		} catch (ServerAPICallFailedException e) {
 			e.printStackTrace();
 			fail("Failed to create user: " + e);
 		}
@@ -42,7 +42,7 @@ public class APITest extends android.test.ActivityInstrumentationTestCase2<Creat
 		 */
 		try {
 			api.user(primaryUserId);
-		} catch (APICallFailedException e) {
+		} catch (ServerAPICallFailedException e) {
 			e.printStackTrace();
 			fail("Failed to retrieve user: " + e);
 		}
@@ -53,7 +53,7 @@ public class APITest extends android.test.ActivityInstrumentationTestCase2<Creat
 		try {
 			api.user(secondaryUserId);
 			fail("User '" + secondaryUserId + "' should not exist");
-		} catch (APICallFailedException e) {
+		} catch (ServerAPICallFailedException e) {
 			assertTrue("User should not be found", e.getMessage().contains("not found"));
 		}
 	}
@@ -62,7 +62,7 @@ public class APITest extends android.test.ActivityInstrumentationTestCase2<Creat
 		try {
 			api.createUser(primaryUserId, "Mr Test A");
 			api.createUser(secondaryUserId, "Mr Test B");
-		} catch (APICallFailedException e) {
+		} catch (ServerAPICallFailedException e) {
 			e.printStackTrace();
 			fail("Failed to create user: " + e);
 		}
@@ -72,7 +72,7 @@ public class APITest extends android.test.ActivityInstrumentationTestCase2<Creat
 		try {
 			meetingId = api.createMeeting(primaryUserId, "Test Meeting");
 			assertTrue("Creating a meeting should return a valid meeting id (meetingId=" + meetingId + ")", meetingId > 0);
-		} catch (APICallFailedException e) {
+		} catch (ServerAPICallFailedException e) {
 			e.printStackTrace();
 			fail("Failed to create meeting: " + e);
 		}
@@ -97,7 +97,7 @@ public class APITest extends android.test.ActivityInstrumentationTestCase2<Creat
 			assertEquals(primaryUserId, found.getUser().getId());
 			assertEquals("Meeting creator should be marked as NOTIFIED after meeting creation", true, found.getNotified());
 			assertEquals("Meeting creator should be NOT READY after meeting creation", Participant.STATE_NOT_READY, found.getState());
-		} catch (APICallFailedException e) {
+		} catch (ServerAPICallFailedException e) {
 			e.printStackTrace();
 			fail("Failed to read meeting with id '" + meetingId + "': " + e);			
 		}
@@ -105,7 +105,7 @@ public class APITest extends android.test.ActivityInstrumentationTestCase2<Creat
 		// Test adding participant to meeting
 		try {
 			api.addMeetingParticipant(meetingId, secondaryUserId);
-		} catch (APICallFailedException e) {
+		} catch (ServerAPICallFailedException e) {
 			e.printStackTrace();
 			fail("Failed to add participant to meeting with id '" + meetingId + "': " + e);			
 		}
@@ -126,7 +126,7 @@ public class APITest extends android.test.ActivityInstrumentationTestCase2<Creat
 			assertEquals(secondaryUserId, found.getUser().getId());
 			assertEquals("After being added to a meeting, a participant should be marked as NOT NOTIFIED", false, found.getNotified());
 			assertEquals("After being added to a meeting, a participant should be NOT READY", Participant.STATE_NOT_READY, found.getState());
-		} catch (APICallFailedException e) {
+		} catch (ServerAPICallFailedException e) {
 			e.printStackTrace();
 			fail("Failed to read meeting with id '" + meetingId + "': " + e);			
 		}
@@ -145,7 +145,7 @@ public class APITest extends android.test.ActivityInstrumentationTestCase2<Creat
 			assertEquals(meetingId, found.getId());
 			assertEquals("Test Meeting", found.getName());
 			assertEquals(2, found.getParticipants().size());
-		} catch (APICallFailedException e) {
+		} catch (ServerAPICallFailedException e) {
 			e.printStackTrace();
 			fail("Failed to read meeting with id '" + meetingId + "': " + e);			
 		}
@@ -153,7 +153,7 @@ public class APITest extends android.test.ActivityInstrumentationTestCase2<Creat
 		// Test setting status of participant
 		try {
 			api.ready(meetingId, primaryUserId);
-		} catch (APICallFailedException e) {
+		} catch (ServerAPICallFailedException e) {
 			e.printStackTrace();
 			fail("Failed to set status of participant '" + primaryUserId + "' to ready in meeting '" + meetingId + "': " + e);			
 		}
@@ -174,7 +174,7 @@ public class APITest extends android.test.ActivityInstrumentationTestCase2<Creat
 			assertEquals(primaryUserId, found.getUser().getId());
 			//assertEquals("After being added to a meeting, a participant should be marked as NOT NOTIFIED", false, found.getNotified());
 			assertEquals("After setting status to ready, participant should be READY", Participant.STATE_READY, found.getState());
-		} catch (APICallFailedException e) {
+		} catch (ServerAPICallFailedException e) {
 			e.printStackTrace();
 			fail("Failed to read meeting with id '" + meetingId + "': " + e);			
 		}
@@ -182,7 +182,7 @@ public class APITest extends android.test.ActivityInstrumentationTestCase2<Creat
 		// Test removal of participant
 		try {
 			api.removeMeetingParticipant(meetingId, secondaryUserId);
-		} catch (APICallFailedException e) {
+		} catch (ServerAPICallFailedException e) {
 			e.printStackTrace();
 			fail("Failed to remove participant to meeting with id '" + meetingId + "': " + e);			
 		}
@@ -199,7 +199,7 @@ public class APITest extends android.test.ActivityInstrumentationTestCase2<Creat
 				}
 			}
 			assertNull("After removing participant they should not be in the meeting", found);
-		} catch (APICallFailedException e) {
+		} catch (ServerAPICallFailedException e) {
 			e.printStackTrace();
 			fail("Failed to read meeting with id '" + meetingId + "': " + e);			
 		}
@@ -207,7 +207,7 @@ public class APITest extends android.test.ActivityInstrumentationTestCase2<Creat
 		try {
 			List<Meeting> meetings = api.userMeetings(secondaryUserId);
 			assertEquals("After being removed from the meeting, a user should have no meetings in their meeting list", 0, meetings.size());
-		} catch (APICallFailedException e) {
+		} catch (ServerAPICallFailedException e) {
 			e.printStackTrace();
 			fail("Failed to read meetings for user '" + secondaryUserId + "': " + e);			
 		}

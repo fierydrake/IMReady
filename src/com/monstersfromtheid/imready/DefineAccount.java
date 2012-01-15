@@ -18,9 +18,9 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
 
-import com.monstersfromtheid.imready.client.API;
-import com.monstersfromtheid.imready.client.API.Action;
-import com.monstersfromtheid.imready.client.APICallFailedException;
+import com.monstersfromtheid.imready.client.ServerAPI;
+import com.monstersfromtheid.imready.client.ServerAPI.Action;
+import com.monstersfromtheid.imready.client.ServerAPICallFailedException;
 import com.monstersfromtheid.imready.service.CheckMeetingsAlarmReceiver;
 
 public class DefineAccount extends Activity {
@@ -117,13 +117,14 @@ public class DefineAccount extends Activity {
     private void createAccount(final int accountType, final String username, final String nickname) {
         /* Sanity check the user and nick name */
         /* TODO */
-    	final API api = new API(username);
+    	final ServerAPI api = new ServerAPI(username);
 
     	IMReady.setUserAndNickName(username, nickname, this);
+    	IMReady.setKnownMeetingsJSON("[]", this); // Note that we have to prime the known meetings with an empty JSON array
 
-        API.performInBackground(new Action<Void>() {
+        ServerAPI.performInBackground(new Action<Void>() {
             @Override
-            public Void action() throws APICallFailedException {
+            public Void action() throws ServerAPICallFailedException {
                 if (accountType == NEW_ACCOUNT) {
                     api.createUser(username, nickname);
                 } else if (accountType == EXISTING_ACCOUNT) {
@@ -141,7 +142,7 @@ public class DefineAccount extends Activity {
             }
 
             @Override
-            public void failure(APICallFailedException e) {
+            public void failure(ServerAPICallFailedException e) {
                 Toast.makeText(DefineAccount.this, "Failed: " + e, Toast.LENGTH_LONG).show();
             }
         });

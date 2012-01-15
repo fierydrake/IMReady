@@ -17,9 +17,9 @@ import android.widget.SimpleAdapter;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.monstersfromtheid.imready.client.API;
-import com.monstersfromtheid.imready.client.API.Action;
-import com.monstersfromtheid.imready.client.APICallFailedException;
+import com.monstersfromtheid.imready.client.ServerAPI;
+import com.monstersfromtheid.imready.client.ServerAPI.Action;
+import com.monstersfromtheid.imready.client.ServerAPICallFailedException;
 import com.monstersfromtheid.imready.client.Meeting;
 import com.monstersfromtheid.imready.client.Participant;
 
@@ -31,7 +31,7 @@ public class ViewMeeting extends ListActivity {
             R.id.meeting_participant_list_item_readiness };
     private SimpleAdapter adapter;
     
-    private API api;
+    private ServerAPI api;
     private int meetingId;
     private String meetingName;
     private boolean myStatus = false;
@@ -39,7 +39,7 @@ public class ViewMeeting extends ListActivity {
 
     private class RefreshMeetingDetailsAction extends Action<Meeting> {
         @Override
-        public Meeting action() throws APICallFailedException {
+        public Meeting action() throws ServerAPICallFailedException {
             return api.meeting(meetingId);
         }
         @Override
@@ -60,7 +60,7 @@ public class ViewMeeting extends ListActivity {
             adapter.notifyDataSetChanged();
         }
         @Override
-        public void failure(APICallFailedException e) {
+        public void failure(ServerAPICallFailedException e) {
             Toast.makeText(ViewMeeting.this, "Failed: " + e, Toast.LENGTH_LONG).show();
         }    	
     }
@@ -83,13 +83,13 @@ public class ViewMeeting extends ListActivity {
         String userNickName = IMReady.getNickName(this);
         final String userName = IMReady.getUserName(this);
         
-        api = new API(userName);
+        api = new ServerAPI(userName);
         meetingId = Integer.parseInt(m.group(1));
         meetingName = Uri.decode(m.group(2));
 
         adapter = new SimpleAdapter(this, participants, R.layout.meeting_participant_list_item, from, to);
         initialiseActivityFromLocalKnowledge(meetingName, meetingId);
-        API.performInBackground(new RefreshMeetingDetailsAction());
+        ServerAPI.performInBackground(new RefreshMeetingDetailsAction());
         adapter.setViewBinder(new SimpleAdapter.ViewBinder() {
             public boolean setViewValue(View view, Object data, String textRepresentation) {
                 if (view.getId() == R.id.meeting_participant_list_item_readiness) {
@@ -113,9 +113,9 @@ public class ViewMeeting extends ListActivity {
 				}
 
 				/* Set the status on the server */
-				API.performInBackground(new Action<Void>() {
+				ServerAPI.performInBackground(new Action<Void>() {
         			@Override
-        			public Void action() throws APICallFailedException {
+        			public Void action() throws ServerAPICallFailedException {
         				api.ready(meetingId, userName);
         				return null;
         			}
@@ -125,7 +125,7 @@ public class ViewMeeting extends ListActivity {
         				setMyStatus(true);
         			}
         			@Override
-        			public void failure(APICallFailedException e) {
+        			public void failure(ServerAPICallFailedException e) {
         				Toast.makeText(ViewMeeting.this, "Failed to set user status: " + e, Toast.LENGTH_LONG).show();
         			}
         		});
@@ -146,7 +146,7 @@ public class ViewMeeting extends ListActivity {
     }
     
 	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        API.performInBackground(new RefreshMeetingDetailsAction());
+        ServerAPI.performInBackground(new RefreshMeetingDetailsAction());
     }
 
     private void initialiseActivityFromLocalKnowledge(String meetingName, int meetingId) {
