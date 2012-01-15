@@ -4,8 +4,10 @@ import java.util.List;
 import java.util.UUID;
 
 import com.monstersfromtheid.imready.CreateMeeting;
+import com.monstersfromtheid.imready.client.MessageAPI;
+import com.monstersfromtheid.imready.client.MessageAPIException;
 import com.monstersfromtheid.imready.client.ServerAPI;
-import com.monstersfromtheid.imready.client.ServerAPICallFailedExceptioneption;
+import com.monstersfromtheid.imready.client.ServerAPICallFailedException;
 import com.monstersfromtheid.imready.client.Meeting;
 import com.monstersfromtheid.imready.client.Participant;
 
@@ -132,7 +134,7 @@ public class ServerAPITest extends android.test.ActivityInstrumentationTestCase2
 		}
 
 		try {
-			List<Meeting> meetings = api.userMeetings(secondaryUserId);
+			List<Meeting> meetings = MessageAPI.userMeetings( api.userMeetings(secondaryUserId) );
 			assertEquals("After being added to a meeting, a user should have a meeting in their meeting list", 1, meetings.size());
 			
 			Meeting found = null;
@@ -147,7 +149,10 @@ public class ServerAPITest extends android.test.ActivityInstrumentationTestCase2
 			assertEquals(2, found.getParticipants().size());
 		} catch (ServerAPICallFailedException e) {
 			e.printStackTrace();
-			fail("Failed to read meeting with id '" + meetingId + "': " + e);			
+			fail("Failed to get meeting with id '" + meetingId + "': " + e);			
+		} catch (MessageAPIException e) {
+			e.printStackTrace();
+			fail("Failed to parse meeting with id '" + meetingId + "': " + e);
 		}
 		
 		// Test setting status of participant
@@ -205,11 +210,14 @@ public class ServerAPITest extends android.test.ActivityInstrumentationTestCase2
 		}
 
 		try {
-			List<Meeting> meetings = api.userMeetings(secondaryUserId);
+			List<Meeting> meetings = MessageAPI.userMeetings( api.userMeetings(secondaryUserId) );
 			assertEquals("After being removed from the meeting, a user should have no meetings in their meeting list", 0, meetings.size());
 		} catch (ServerAPICallFailedException e) {
 			e.printStackTrace();
-			fail("Failed to read meetings for user '" + secondaryUserId + "': " + e);			
+			fail("Failed to get meetings for user '" + secondaryUserId + "': " + e);			
+		} catch (MessageAPIException e) {
+			e.printStackTrace();
+			fail("Failed to parse meetings for user '" + secondaryUserId + "': " + e);
 		}
 	}
 
