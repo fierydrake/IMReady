@@ -36,15 +36,15 @@ public class DefineAccount extends Activity {
         boolean changeAccount = false;
 // TODO  - something to guarantee the alarm manager is always going for us.
         // Does this method always get called?
-        AlarmManager alarm = (AlarmManager)getSystemService(Context.ALARM_SERVICE);
-        Intent i = new Intent(this, CheckMeetingsAlarmReceiver.class);
-	    PendingIntent pi = PendingIntent.getBroadcast(this, 0, i, 0);
+        //AlarmManager alarm = (AlarmManager)getSystemService(Context.ALARM_SERVICE);
+        //Intent i = new Intent(this, CheckMeetingsAlarmReceiver.class);
+	    //PendingIntent pi = PendingIntent.getBroadcast(this, 0, i, 0);
 	    
 	    //alarm.cancel(pi);
-	    alarm.setInexactRepeating(AlarmManager.ELAPSED_REALTIME_WAKEUP,
-	    		SystemClock.elapsedRealtime()+60000,
-	    		60000,
-	    		pi);
+	    //alarm.setInexactRepeating(AlarmManager.ELAPSED_REALTIME_WAKEUP,
+	    //		SystemClock.elapsedRealtime()+60000,
+	    //		IMReady.DEFAULT_CHECK_PERIOD,
+	    //		pi);
         
         
         Uri accountDetailsAction = getIntent().getData();

@@ -81,7 +81,7 @@ public class ServerAPITest extends android.test.ActivityInstrumentationTestCase2
 		
 		// Test reading of meeting
 		try {
-			Meeting meeting = api.meeting(meetingId);
+			Meeting meeting = MessageAPI.meeting( api.meeting(meetingId) );
 			
 			assertEquals("Test Meeting", meeting.getName());
 			assertEquals(meetingId, meeting.getId());
@@ -113,7 +113,7 @@ public class ServerAPITest extends android.test.ActivityInstrumentationTestCase2
 		}
 
 		try {
-			Meeting meeting = api.meeting(meetingId);
+			Meeting meeting = MessageAPI.meeting( api.meeting(meetingId) );
 
 			// Simple search for now, should implement User.equals() & hashCode()
 			Participant found = null;
@@ -164,7 +164,7 @@ public class ServerAPITest extends android.test.ActivityInstrumentationTestCase2
 		}
 
 		try {
-			Meeting meeting = api.meeting(meetingId);
+			Meeting meeting = MessageAPI.meeting( api.meeting(meetingId) );
 
 			// Simple search for now, should implement User.equals() & hashCode()
 			Participant found = null;
@@ -193,7 +193,7 @@ public class ServerAPITest extends android.test.ActivityInstrumentationTestCase2
 		}
 
 		try {
-			Meeting meeting = api.meeting(meetingId);
+			Meeting meeting = MessageAPI.meeting( api.meeting(meetingId) );
 
 			// Simple search for now, should implement User.equals() & hashCode()
 			Participant found = null;

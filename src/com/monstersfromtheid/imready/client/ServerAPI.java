@@ -87,7 +87,7 @@ public class ServerAPI {
 		}				
 	}
 	
-	public Meeting meeting(int id) throws ServerAPICallFailedException {
+	public String meeting(int id) throws ServerAPICallFailedException {
 	    final AndroidHttpClient http = AndroidHttpClient.newInstance(IMReady.CLIENT_HTTP_NAME);
 	    try {
 	        URI uri = new URI(SERVER_URI).resolve("meeting/" + id);
@@ -100,20 +100,10 @@ public class ServerAPI {
 	        case 200: // OK
 	            String body = new BufferedReader(new InputStreamReader(response.getEntity().getContent()), 2048).readLine();
 	            try {
-	                JSONObject meetingJSON = (JSONObject)new JSONTokener(body).nextValue();
-	                ArrayList<Participant> participants = new ArrayList<Participant>();
-	                JSONArray participantsJSON = meetingJSON.getJSONArray("participants");
-	                for (int i=0; i<participantsJSON.length(); i++) {
-	                    JSONObject participantJSON = participantsJSON.getJSONObject(i);
-	                    participants.add(
-	                        new Participant(
-	                            new User(participantJSON.getString("id"), participantJSON.getString("defaultNickname")),
-	                            participantJSON.getInt("state"),
-	                            participantJSON.getBoolean("notified")
-	                        )
-	                    );
-	                }
-	                return new Meeting(meetingJSON.getInt("id"), meetingJSON.getString("name"), meetingJSON.getInt("state"), participants);
+	            	// TODO - check return is valid JSON?
+
+	            	JSONObject meetingJSON = (JSONObject)new JSONTokener(body).nextValue();
+	                return body;
 	            } catch (IllegalArgumentException e) {
 	                e.printStackTrace();
 	                throw new ServerAPICallFailedException("Server response invalid: " + e, e);

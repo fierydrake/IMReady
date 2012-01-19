@@ -19,6 +19,7 @@ import android.widget.Toast;
 
 import com.monstersfromtheid.imready.client.ServerAPI;
 import com.monstersfromtheid.imready.client.ServerAPI.Action;
+import com.monstersfromtheid.imready.client.MessageAPI;
 import com.monstersfromtheid.imready.client.ServerAPICallFailedException;
 import com.monstersfromtheid.imready.client.Meeting;
 import com.monstersfromtheid.imready.client.Participant;
@@ -40,7 +41,7 @@ public class ViewMeeting extends ListActivity {
     private class RefreshMeetingDetailsAction extends Action<Meeting> {
         @Override
         public Meeting action() throws ServerAPICallFailedException {
-            return api.meeting(meetingId);
+            return MessageAPI.meeting( api.meeting(meetingId) );
         }
         @Override
         public void success(Meeting meeting) {

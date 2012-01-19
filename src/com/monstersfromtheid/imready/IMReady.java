@@ -25,7 +25,8 @@ public class IMReady {
 	private static final String PREFERENCES_KEYS_NICKNAME        = "accountNickName";
 	private static final String PREFERENCES_KEYS_MEETING_JSON    = "knownMeetingsJSON";
 	
-	
+	public static final int DEFAULT_CHECK_PERIOD = 900000; // 900000 = 15 mins
+
 	public static final boolean isAccountDefined(ContextWrapper c){
 		return c.getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE).getBoolean(PREFERENCES_KEYS_ACCOUNT_DEFINED, false);
 	}
