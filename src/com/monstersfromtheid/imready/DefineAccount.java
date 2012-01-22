@@ -34,20 +34,19 @@ public class DefineAccount extends Activity {
         super.onCreate(savedInstanceState);
         
         boolean changeAccount = false;
-// TODO  - something to guarantee the alarm manager is always going for us.
+        // TODO  - something to guarantee the alarm manager is always going for us.
         // Does this method always get called?
-        //AlarmManager alarm = (AlarmManager)getSystemService(Context.ALARM_SERVICE);
-        //Intent i = new Intent(this, CheckMeetingsAlarmReceiver.class);
-	    //PendingIntent pi = PendingIntent.getBroadcast(this, 0, i, 0);
+        AlarmManager alarm = (AlarmManager)getSystemService(Context.ALARM_SERVICE);
+        Intent i = new Intent(this, CheckMeetingsAlarmReceiver.class);
+	    PendingIntent pi = PendingIntent.getBroadcast(this, 0, i, 0);
 	    
 	    //alarm.cancel(pi);
-	    //alarm.setInexactRepeating(AlarmManager.ELAPSED_REALTIME_WAKEUP,
-	    //		SystemClock.elapsedRealtime()+60000,
-	    //		IMReady.DEFAULT_CHECK_PERIOD,
-	    //		pi);
-        
-        
-        Uri accountDetailsAction = getIntent().getData();
+	    alarm.setInexactRepeating(AlarmManager.ELAPSED_REALTIME_WAKEUP,
+	    		SystemClock.elapsedRealtime()+60000,
+	    		IMReady.DEFAULT_CHECK_PERIOD,
+	    		pi);
+
+	    Uri accountDetailsAction = getIntent().getData();
         if ( accountDetailsAction != null &&
         	 "content".equals( accountDetailsAction.getScheme() ) &&
              accountDetailsAction.getEncodedPath().startsWith("/util")) {
@@ -120,7 +119,7 @@ public class DefineAccount extends Activity {
     	final ServerAPI api = new ServerAPI(username);
 
     	IMReady.setUserAndNickName(username, nickname, this);
-    	IMReady.setKnownMeetingsJSON("[]", this); // Note that we have to prime the known meetings with an empty JSON array
+    	//IMReady.setUserAwareMeetingsJSON("[]", this); // Note that we have to prime the known meetings with an empty JSON array
 
         ServerAPI.performInBackground(new Action<Void>() {
             @Override

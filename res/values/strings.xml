@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">ImReady</string>
+    <string name="app_name">IMReady</string>
 
 	<string name="create_meeting_name_label">Meeting name</string>
 	<string name="create_meeting_default_meeting_name">My meeting</string>
@@ -22,6 +22,11 @@
     <string name="add_participant_user_name_label">User name</string>
     <string name="add_participant_button_default_user_name"></string>
     <string name="add_participant_button">Add participant...</string>
+    
+    <string name="preferences_polling_interval_label">How often should I check for meetings?</string>
+    <string name="preferences_polling_interval_value">15 mins</string>
+    <string name="preferences_notification_level_text">What do you want notifications for?</string>
 
     <string name="menu_account">Account settings</string>
+    <string name="menu_preferences">Preferences</string>
 </resources>
