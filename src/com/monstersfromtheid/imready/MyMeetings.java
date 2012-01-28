@@ -5,31 +5,30 @@ import java.util.HashMap;
 import java.util.List;
 
 import android.app.ListActivity;
+import android.content.ComponentName;
+import android.content.Context;
 import android.content.Intent;
+import android.content.ServiceConnection;
 import android.content.SharedPreferences;
-import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.IBinder;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
-import android.view.View.OnClickListener;
-import android.widget.AdapterView;
-import android.widget.AdapterView.OnItemClickListener;
-import android.widget.Button;
 import android.widget.SimpleAdapter;
-import android.widget.TextView;
 import android.widget.Toast;
 
+import com.monstersfromtheid.imready.client.Meeting;
 import com.monstersfromtheid.imready.client.MessageAPI;
 import com.monstersfromtheid.imready.client.MessageAPIException;
 import com.monstersfromtheid.imready.client.ServerAPI;
 import com.monstersfromtheid.imready.client.ServerAPI.Action;
 import com.monstersfromtheid.imready.client.ServerAPICallFailedException;
-import com.monstersfromtheid.imready.client.Meeting;
+import com.monstersfromtheid.imready.service.CheckMeetingsService;
 
-public class MyMeetings extends ListActivity {
+public class MyMeetings extends ListActivity implements CheckMeetingsService.MeetingsChangeListener {
 	public static final int ACTIVITY_CREATE_MEETING = 0;
 
 	private ArrayList<HashMap<String, ?>> meetings = new ArrayList<HashMap<String, ?>>();
@@ -69,14 +68,40 @@ public class MyMeetings extends ListActivity {
             Toast.makeText(MyMeetings.this, "Failed: " + e, Toast.LENGTH_LONG).show();
         }    	
     }
-
+    
 	@Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         
-        String userName = IMReady.getUserName(this);
+        // Set initial look of the activity
+        View loadingSpinner = (View)getLayoutInflater().inflate(R.layout.meetings_loading_spinner, null);
+        getListView().addHeaderView(loadingSpinner);
+	}
+	
+	private ServiceConnection serviceConnection = new ServiceConnection() {
+	    private CheckMeetingsService meetingsService;
+		public void onServiceConnected(ComponentName className, IBinder service) {
+			meetingsService = ((CheckMeetingsService.LocalBinder)service).getService();
+			meetingsService.addMeetingsChangeListener(MyMeetings.this);
+		}
+		public void onServiceDisconnected(ComponentName className) {
+			meetingsService.removeMeetingsChangeListener(MyMeetings.this);
+			meetingsService = null;
+		}		
+	};
+	
+	@Override
+	public void onStart() {
+        bindService(new Intent(this, CheckMeetingsService.class), serviceConnection, Context.BIND_NOT_FOREGROUND); // guessing on this flag
+	}
+	
+	@Override
+	public void onStop() {
+		unbindService(serviceConnection);
+	}
         
-        final ServerAPI api = new ServerAPI(userName);
+	public void onMeetingsChange(CheckMeetingsService.MeetingsChangeEvent e) {
+/*        final ServerAPI api = new ServerAPI(userName);
 
         adapter = new SimpleAdapter(this, meetings, R.layout.meeting_list_item, from, to);
 //        initialiseActivityFromLocalKnowledge(meetingName, meetingId, userNickName, userName);
@@ -110,7 +135,8 @@ public class MyMeetings extends ListActivity {
 			}
         });
         setListAdapter(adapter);
-    }
+    */
+	}
 
 	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         /* If returning after ACTIVITY_GOT_ACCOUNT then just exit this Activity */
