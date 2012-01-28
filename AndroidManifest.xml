@@ -29,5 +29,6 @@
 </receiver>
 <receiver android:name=".service.CheckMeetingsAlarmReceiver"></receiver>
 <service android:name=".service.CheckMeetingsService"></service>
+<activity android:name="Preferences"></activity>
 </application>
 </manifest>

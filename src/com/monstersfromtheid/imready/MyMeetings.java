@@ -3,13 +3,13 @@ package com.monstersfromtheid.imready;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.prefs.Preferences;
 
 import android.app.ListActivity;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
-import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.IBinder;
@@ -45,7 +45,9 @@ public class MyMeetings extends ListActivity implements CheckMeetingsService.Mee
         @Override
         public List<Meeting> action() throws ServerAPICallFailedException {
         	try {
-        		return MessageAPI.userMeetings( api.userMeetings(api.getRequestingUserId()) );
+        		String s = api.userMeetings(api.getRequestingUserId());
+    			storeMeetingJSON(s);
+        		return MessageAPI.userMeetings( s );
         	} catch (MessageAPIException e) {
         		// Just a quick hack to get me beyond this. 
 				throw new ServerAPICallFailedException(e.getMessage(), e);
@@ -173,29 +175,26 @@ public class MyMeetings extends ListActivity implements CheckMeetingsService.Mee
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
      MenuInflater inflater = getMenuInflater();
-        inflater.inflate(R.menu.main_menu, menu);
+        inflater.inflate(R.menu.menu_account_pref, menu);
         return true;
+    }
+    
+    private void storeMeetingJSON(String s){
+    	IMReady.setUserAwareMeetingsJSON(s, this);
+    	IMReady.setDirtyMeetings(new ArrayList<Integer>(), this);
     }
     
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
         case R.id.menu_account:
-            // Open the accounts page and blank the "activity history"
+            // Open the accounts page
             Uri resetAccountDetails = Uri.parse("content://com.monstersfromtheid.imready/util/" + IMReady.ACTIONS_ACOUNT_CHANGE_DETAILS);
             startActivity(new Intent(Intent.ACTION_VIEW, resetAccountDetails, MyMeetings.this, DefineAccount.class));
             return true;
-        case R.id.menu_blank: // TODO This should be removed eventually.
-            SharedPreferences.Editor preferences = getSharedPreferences(IMReady.PREFERENCES_NAME, MODE_PRIVATE).edit();
-            preferences.remove("accountDefined");
-            preferences.remove("accountUserName");
-            preferences.remove("accountNickName");
-            preferences.commit();
-        
-            Toast.makeText(MyMeetings.this, "Blanked", Toast.LENGTH_SHORT).show();
-
-            setResult(RESULT_CANCELED);
-            finish();
+        case R.id.menu_preferences:
+        	// Open the preferences page
+        	startActivity(new Intent( MyMeetings.this, Preferences.class ));
             return true;
         default:
             return super.onOptionsItemSelected(item);

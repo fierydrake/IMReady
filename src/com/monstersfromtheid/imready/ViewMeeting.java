@@ -10,6 +10,9 @@ import android.content.Intent;
 import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
@@ -180,5 +183,22 @@ public class ViewMeeting extends ListActivity {
         setStatus.setText( myStatus ? R.string.view_meeting_set_participant_status_button_ready : R.string.view_meeting_set_participant_status_button_not_ready );
         readinessText.setTextColor( myStatus ? Color.GREEN : Color.RED );
         readinessText.setText( myStatus ? "Ready" : "Not ready" );
+    }
+    
+    public boolean onCreateOptionsMenu(Menu menu) {
+    	MenuInflater inflater = getMenuInflater();
+    	inflater.inflate(R.menu.menu_pref, menu);
+    	return true;
+    }
+    
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+        case R.id.menu_preferences:
+        	// Open the preferences page
+        	startActivity(new Intent( ViewMeeting.this, Preferences.class ));
+            return true;
+        default:
+            return super.onOptionsItemSelected(item);
+        }
     }
 }

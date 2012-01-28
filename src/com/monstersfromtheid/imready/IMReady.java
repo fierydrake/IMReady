@@ -24,6 +24,8 @@ public class IMReady {
 	private static final String PREFERENCES_KEYS_USERNAME        = "accountUserName";
 	private static final String PREFERENCES_KEYS_NICKNAME        = "accountNickName";
 	private static final String PREFERENCES_KEYS_MEETING_JSON    = "knownMeetingsJSON";
+	private static final String PREFERENCES_KEYS_CHANGES_JSON    = "knownMeetingsForChangesJSON";
+	private static final String PREFERENCES_KEYS_DIRTY_MEETINGS  = "dirtyMeetings";
 	
 	public static final int DEFAULT_CHECK_PERIOD = 900000; // 900000 = 15 mins
 
@@ -52,16 +54,63 @@ public class IMReady {
         preferences.commit();
 	}
 	
-	public static final String getKnownMeetingsJSON(ContextWrapper c){
-		return c.getSharedPreferences(IMReady.PREFERENCES_NAME, Context.MODE_PRIVATE).getString(PREFERENCES_KEYS_MEETING_JSON, "");
+	public static final String getUserAwareMeetingsJSON(ContextWrapper c){
+		return c.getSharedPreferences(IMReady.PREFERENCES_NAME, Context.MODE_PRIVATE).getString(PREFERENCES_KEYS_MEETING_JSON, "[]");
 	}
 	
-	public static final void setKnownMeetingsJSON(String meetings, ContextWrapper c){
+	public static final void setUserAwareMeetingsJSON(String meetings, ContextWrapper c){
 		SharedPreferences.Editor preferences = c.getSharedPreferences(IMReady.PREFERENCES_NAME, Context.MODE_PRIVATE).edit();
         preferences.putString(PREFERENCES_KEYS_MEETING_JSON, meetings);
         preferences.commit();
 	}
 	
+	public static final String getLastSeenMeetingsJSON(ContextWrapper c){
+		return c.getSharedPreferences(IMReady.PREFERENCES_NAME, Context.MODE_PRIVATE).getString(PREFERENCES_KEYS_CHANGES_JSON, "[]");
+	}
+
+	public static final void setLastSeenMeetingsJSON(String meetings, ContextWrapper c){
+		SharedPreferences.Editor preferences = c.getSharedPreferences(IMReady.PREFERENCES_NAME, Context.MODE_PRIVATE).edit();
+        preferences.putString(PREFERENCES_KEYS_CHANGES_JSON, meetings);
+        preferences.commit();
+	}
+	
+	public static final List<Integer> getDirtyMeetings(ContextWrapper c){
+		ArrayList<Integer> dirtyMeetings = new ArrayList<Integer>();
+		
+		String[] s = c.getSharedPreferences(IMReady.PREFERENCES_NAME, Context.MODE_PRIVATE).getString(PREFERENCES_KEYS_DIRTY_MEETINGS, "").split("-");
+		for (int i = 0; i < s.length; i++) {
+			if( s[i].length() > 0 ){
+				dirtyMeetings.add( new Integer( s[i] ) );
+			}
+		}
+		
+		return dirtyMeetings;
+	}
+	
+	public static final void setDirtyMeetings(List<Integer> dirtyMeetings, ContextWrapper c){
+		String s = "";
+		
+		Iterator<Integer> iter = dirtyMeetings.iterator();
+		while(iter.hasNext()){
+			s += ((Integer)iter.next());
+			if(iter.hasNext()) {
+				s += "-";
+			}
+		}
+		
+		SharedPreferences.Editor preferences = c.getSharedPreferences(IMReady.PREFERENCES_NAME, Context.MODE_PRIVATE).edit();
+        preferences.putString(PREFERENCES_KEYS_DIRTY_MEETINGS, s);
+        preferences.commit();
+	}
+
+	/**
+	 * Look through the list of <b>latestMeetings</b> and return 
+	 * a list of all Meeting objects that are not in <b>knownMeetings</b>.
+	 * 
+	 * @param knownMeetings
+	 * @param latestMeetings
+	 * @return
+	 */
 	public static final List<Meeting> newMeetings(List<Meeting> knownMeetings, List<Meeting> latestMeetings){
 		ArrayList <Meeting> newMeetings = new ArrayList<Meeting>();
 		
@@ -88,6 +137,15 @@ public class IMReady {
 		return newMeetings;
 	}
 	
+	/**
+	 * For each of the <b>knownMeetings</b>, look in the list of 
+	 * <b>latestMeetings</b> and return a list of those Meetings that
+	 * have changed.
+	 *   
+	 * @param knownMeetings
+	 * @param latestMeetings
+	 * @return
+	 */
 	public static final List<Meeting> changedMeetings(List<Meeting> knownMeetings, List<Meeting> latestMeetings){
 		ArrayList <Meeting> changedMeetings = new ArrayList<Meeting>();
 		
@@ -111,5 +169,51 @@ public class IMReady {
 		
 		return changedMeetings;
 	}
+	
+	/** 
+	 * Return a list of the Meeting objects in <b>meetings</b> that are 
+	 * marked as ready.
+	 * 
+	 * @param meetings
+	 * @return
+	 */
+	public static final List<Meeting> readyMeetings(List<Meeting> meetings){
+		ArrayList <Meeting> readyMeetings = new ArrayList<Meeting>();
+
+		Iterator<Meeting> iterM = meetings.iterator();
+		while(iterM.hasNext()){
+			Meeting thisMeeting = (Meeting)iterM.next();
+			if ( thisMeeting.getState() == 1 ){
+				readyMeetings.add(thisMeeting);
+			}
+		}
+
+		return readyMeetings;
+	}
+	
+	/**
+	 * Return a list of Integers containing the union of <b>knownDirt</b> and the 
+	 * meeting ID numbers in <b>newDirt</b>.  Note that any entries in <b>newDirt</b>
+	 * that are in a ready state are ignored.
+	 * 
+	 * @param knownDirt
+	 * @param newDirt
+	 * @return
+	 */
+	public static final List<Integer> mergeDirtyMeetingList(List<Integer> knownDirt, List<Meeting> newDirt){
+		ArrayList <Integer> fullDirt = new ArrayList<Integer>(knownDirt);
+
+		Iterator<Meeting> iterNew = newDirt.iterator();
+		while(iterNew.hasNext()){
+			Meeting m = (Meeting)iterNew.next();
+			Integer i = new Integer( m.getId() );
+			if( ! knownDirt.contains(i) && m.getState() != 1 ){
+				fullDirt.add(i);
+			}
+		}
+
+		return fullDirt;
+	}
+
 }
 
