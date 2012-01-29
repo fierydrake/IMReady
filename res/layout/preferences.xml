@@ -13,43 +13,6 @@
         android:padding="10dp" >
 
         <TextView
-            android:id="@+id/preferences_polling_label"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="@string/preferences_polling_interval_label" />
-
-        <RadioGroup
-            android:id="@+id/radioGroup1"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content" >
-
-            <RadioButton
-                android:id="@+id/radio0"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:checked="true"
-                android:text="1 minute" />
-
-            <RadioButton
-                android:id="@+id/radio1"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="15 minutes" />
-
-            <RadioButton
-                android:id="@+id/radio2"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="3 hours" />
-
-            <RadioButton
-                android:id="@+id/radio3"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="24 hours" />
-        </RadioGroup>
-
-        <TextView
             android:id="@+id/preferences_notification_level_label"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -57,6 +20,18 @@
 
         <Spinner
             android:id="@+id/preferences_notification_level_spinner"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
+        
+        <TextView
+            android:id="@+id/preferences_polling_interval_label"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingTop="10px"
+            android:text="@string/preferences_polling_interval_text" />
+
+        <Spinner
+            android:id="@+id/preferences_polling_interval_spinner"
             android:layout_width="match_parent"
             android:layout_height="wrap_content" />
 

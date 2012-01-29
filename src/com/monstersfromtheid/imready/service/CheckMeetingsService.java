@@ -68,6 +68,7 @@ public class CheckMeetingsService extends IntentService {
 		} else {
 			try {
 				String latestJSON = api.userMeetings(api.getRequestingUserId());
+				int notificationLevel = IMReady.getNotificationLevel(this);
 
 				// Assume the notification lasts until it is acted on by the user.
 				// This means that I only create a new notification if I saw something change since I last looked.
@@ -94,7 +95,10 @@ public class CheckMeetingsService extends IntentService {
 					List <Integer> newDirtyMeetings = IMReady.mergeDirtyMeetingList(IMReady.getDirtyMeetings(this), 
 																					IMReady.changedMeetings(lastSeenMeetings, latestMeetings));
 					IMReady.setDirtyMeetings(newDirtyMeetings, this);
-					int changeM = newDirtyMeetings.size();
+					int changeM = 0;
+					if( notificationLevel > 0 ){
+						changeM = newDirtyMeetings.size();
+					}
 
 					// Note that this should be done by MyMeetings.  So we accumulate changes for notification message and don't loose any changes.
 					//IMReady.setUserAwareMeetingsJSON(latestJSON, this);

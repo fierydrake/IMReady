@@ -26,6 +26,8 @@ public class IMReady {
 	private static final String PREFERENCES_KEYS_MEETING_JSON    = "knownMeetingsJSON";
 	private static final String PREFERENCES_KEYS_CHANGES_JSON    = "knownMeetingsForChangesJSON";
 	private static final String PREFERENCES_KEYS_DIRTY_MEETINGS  = "dirtyMeetings";
+	private static final String PREFERENCES_KEYS_POL_INTERVAL    = "pollingInterval";
+	private static final String PREFERENCES_KEYS_NOTIFY_LEVEL    = "notificationLevel";
 	
 	public static final int DEFAULT_CHECK_PERIOD = 900000; // 900000 = 15 mins
 
@@ -54,6 +56,26 @@ public class IMReady {
         preferences.commit();
 	}
 	
+	public static final int getpollingInterval(ContextWrapper c){
+		return c.getSharedPreferences(IMReady.PREFERENCES_NAME, Context.MODE_PRIVATE).getInt(PREFERENCES_KEYS_POL_INTERVAL, 0);
+	}
+
+	public static final void setPollingInterval(int interval, ContextWrapper c){
+		SharedPreferences.Editor preferences = c.getSharedPreferences(IMReady.PREFERENCES_NAME, Context.MODE_PRIVATE).edit();
+        preferences.putInt(PREFERENCES_KEYS_POL_INTERVAL, interval);
+        preferences.commit();
+	}
+
+	public static final int getNotificationLevel(ContextWrapper c){
+		return c.getSharedPreferences(IMReady.PREFERENCES_NAME, Context.MODE_PRIVATE).getInt(PREFERENCES_KEYS_NOTIFY_LEVEL, 1);
+	}
+
+	public static final void setNotificationLevel(int interval, ContextWrapper c){
+		SharedPreferences.Editor preferences = c.getSharedPreferences(IMReady.PREFERENCES_NAME, Context.MODE_PRIVATE).edit();
+        preferences.putInt(PREFERENCES_KEYS_NOTIFY_LEVEL, interval);
+        preferences.commit();
+	}
+
 	public static final String getUserAwareMeetingsJSON(ContextWrapper c){
 		return c.getSharedPreferences(IMReady.PREFERENCES_NAME, Context.MODE_PRIVATE).getString(PREFERENCES_KEYS_MEETING_JSON, "[]");
 	}

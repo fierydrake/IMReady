@@ -23,10 +23,21 @@
     <string name="add_participant_button_default_user_name"></string>
     <string name="add_participant_button">Add participant...</string>
     
-    <string name="preferences_polling_interval_label">How often should I check for meetings?</string>
-    <string name="preferences_polling_interval_value">15 mins</string>
     <string name="preferences_notification_level_text">What do you want notifications for?</string>
+    <string name="preferences_polling_interval_text">How often should I check for meeting updates?</string>
+        
+    <string-array name="preferences_notification_level_values">
+        <item>No notifications</item>
+        <item>New &amp; ready meetings</item>
+        <item>All meeting changes</item>
+    </string-array>
 
+    <string-array name="preferences_polling_interval_values">
+        <item>15 minutes</item>
+        <item>1 hour</item>
+        <item>Dynamic</item>
+    </string-array>
+    
     <string name="menu_account">Account settings</string>
     <string name="menu_preferences">Preferences</string>
 </resources>
