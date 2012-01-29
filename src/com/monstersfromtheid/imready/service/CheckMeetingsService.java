@@ -1,5 +1,7 @@
 package com.monstersfromtheid.imready.service;
 
+import java.util.ArrayList;
+import java.util.EventObject;
 import java.util.List;
 
 import android.app.IntentService;
@@ -9,6 +11,7 @@ import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.net.ConnectivityManager;
+import android.os.Binder;
 import android.os.PowerManager;
 
 import com.monstersfromtheid.imready.IMReady;
@@ -28,6 +31,33 @@ public class CheckMeetingsService extends IntentService {
 	private static ServerAPI api;
 	private static String userName;
 	
+    public class LocalBinder extends Binder {
+        public CheckMeetingsService getService() {
+            return CheckMeetingsService.this;
+        }
+    }
+    public static class MeetingsChangeEvent extends EventObject {
+		private static final long serialVersionUID = 1L;
+		public MeetingsChangeEvent(Object source) {
+			super(source);
+		}
+	}
+    public interface MeetingsChangeListener {
+    	public void onMeetingsChange(MeetingsChangeEvent e);
+    }
+    List<MeetingsChangeListener> listeners = new ArrayList<MeetingsChangeListener>(2);
+    public void addMeetingsChangeListener(MeetingsChangeListener listener) {
+    	listeners.add(listener);
+    }
+    public void removeMeetingsChangeListener(MeetingsChangeListener listener) {
+    	listeners.remove(listener);
+    }
+    public void fireMeetingsChanged(MeetingsChangeEvent e){
+    	for (MeetingsChangeListener listener : listeners) {
+    		listener.onMeetingsChange(e);
+    	}
+    }
+    
 	public CheckMeetingsService(String name) {
 		super(name);
 	}
