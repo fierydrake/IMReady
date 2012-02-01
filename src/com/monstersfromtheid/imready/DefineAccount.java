@@ -4,14 +4,9 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import android.app.Activity;
-import android.app.AlarmManager;
-import android.app.PendingIntent;
-import android.content.Context;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.Bundle;
-import android.os.SystemClock;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
@@ -21,7 +16,6 @@ import android.widget.Toast;
 import com.monstersfromtheid.imready.client.ServerAPI;
 import com.monstersfromtheid.imready.client.ServerAPI.Action;
 import com.monstersfromtheid.imready.client.ServerAPICallFailedException;
-import com.monstersfromtheid.imready.service.CheckMeetingsAlarmReceiver;
 
 public class DefineAccount extends Activity {
 
@@ -36,15 +30,7 @@ public class DefineAccount extends Activity {
         boolean changeAccount = false;
         // TODO  - something to guarantee the alarm manager is always going for us.
         // Does this method always get called?
-        AlarmManager alarm = (AlarmManager)getSystemService(Context.ALARM_SERVICE);
-        Intent i = new Intent(this, CheckMeetingsAlarmReceiver.class);
-	    PendingIntent pi = PendingIntent.getBroadcast(this, 0, i, 0);
-	    
-	    //alarm.cancel(pi);
-	    alarm.setInexactRepeating(AlarmManager.ELAPSED_REALTIME_WAKEUP,
-	    		SystemClock.elapsedRealtime()+60000,
-	    		IMReady.DEFAULT_CHECK_PERIOD,
-	    		pi);
+        IMReady.setNextAlarm(this); // remove this in the long run.
 
 	    Uri accountDetailsAction = getIntent().getData();
         if ( accountDetailsAction != null &&
@@ -119,7 +105,6 @@ public class DefineAccount extends Activity {
     	final ServerAPI api = new ServerAPI(username);
 
     	IMReady.setUserAndNickName(username, nickname, this);
-    	//IMReady.setUserAwareMeetingsJSON("[]", this); // Note that we have to prime the known meetings with an empty JSON array
 
         ServerAPI.performInBackground(new Action<Void>() {
             @Override

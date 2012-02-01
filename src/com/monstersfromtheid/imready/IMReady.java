@@ -1,14 +1,20 @@
 package com.monstersfromtheid.imready;
 
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Iterator;
 import java.util.List;
 
+import android.app.AlarmManager;
+import android.app.PendingIntent;
 import android.content.Context;
 import android.content.ContextWrapper;
+import android.content.Intent;
 import android.content.SharedPreferences;
+import android.os.SystemClock;
 
 import com.monstersfromtheid.imready.client.Meeting;
+import com.monstersfromtheid.imready.service.CheckMeetingsAlarmReceiver;
 
 public class IMReady {
 	public static final String PREFERENCES_NAME = "IMReadyPrefs";
@@ -28,8 +34,6 @@ public class IMReady {
 	private static final String PREFERENCES_KEYS_DIRTY_MEETINGS  = "dirtyMeetings";
 	private static final String PREFERENCES_KEYS_POL_INTERVAL    = "pollingInterval";
 	private static final String PREFERENCES_KEYS_NOTIFY_LEVEL    = "notificationLevel";
-	
-	public static final int DEFAULT_CHECK_PERIOD = 900000; // 900000 = 15 mins
 
 	public static final boolean isAccountDefined(ContextWrapper c){
 		return c.getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE).getBoolean(PREFERENCES_KEYS_ACCOUNT_DEFINED, false);
@@ -56,7 +60,7 @@ public class IMReady {
         preferences.commit();
 	}
 	
-	public static final int getpollingInterval(ContextWrapper c){
+	public static final int getPollingInterval(ContextWrapper c){
 		return c.getSharedPreferences(IMReady.PREFERENCES_NAME, Context.MODE_PRIVATE).getInt(PREFERENCES_KEYS_POL_INTERVAL, 0);
 	}
 
@@ -66,6 +70,16 @@ public class IMReady {
         preferences.commit();
 	}
 
+	/**
+	 * Return the current level of notification:<br>
+	 * 
+	 * 0 - No notifications<br>
+	 * 1 - New &amp; ready meetings<br>
+	 * 2 - All meeting changes<br>
+	 * 
+	 * @param c
+	 * @return
+	 */
 	public static final int getNotificationLevel(ContextWrapper c){
 		return c.getSharedPreferences(IMReady.PREFERENCES_NAME, Context.MODE_PRIVATE).getInt(PREFERENCES_KEYS_NOTIFY_LEVEL, 1);
 	}
@@ -123,6 +137,61 @@ public class IMReady {
 		SharedPreferences.Editor preferences = c.getSharedPreferences(IMReady.PREFERENCES_NAME, Context.MODE_PRIVATE).edit();
         preferences.putString(PREFERENCES_KEYS_DIRTY_MEETINGS, s);
         preferences.commit();
+	}
+	
+	/**
+	 * Set the next alarm.  Use the current time, the polling interval settings and the 
+	 * notification level to work out when to set the alarm for, if at all. 
+	 * 
+	 * If the notification level is zero, then any existing alarm is cancelled.
+	 * 
+	 * @param context
+	 */
+	public static final void setNextAlarm(Context context){
+		AlarmManager alarm = (AlarmManager)context.getSystemService(Context.ALARM_SERVICE);
+	    Intent i = new Intent(context, CheckMeetingsAlarmReceiver.class);
+	    PendingIntent pi = PendingIntent.getBroadcast(context, 0, i, 0);
+
+	    // If notifications are off, always turn off the alarm 
+	    if( getNotificationLevel(new ContextWrapper(context)) == 0 ){
+	    	alarm.cancel(pi);
+	    	return;
+	    }
+
+		// Should checks for whether to call go in here or out at the caller level?
+		//  are we in dynamic mode?
+	    // TODO - add the check to see if anything needs to be done.
+
+		long interval;
+		switch ( getPollingInterval(new ContextWrapper(context)) ) {
+		case 0:
+			interval = AlarmManager.INTERVAL_FIFTEEN_MINUTES;
+			break;
+
+		case 1:
+			interval = AlarmManager.INTERVAL_HOUR;
+			break;
+			
+		case 2:
+			int currentHour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY);
+			interval = ( 8 < currentHour && currentHour < 23 ) ? AlarmManager.INTERVAL_FIFTEEN_MINUTES : AlarmManager.INTERVAL_HOUR;
+			break;
+
+		default:
+			interval = AlarmManager.INTERVAL_HOUR;
+			break;
+		}
+		
+		
+		alarm.setInexactRepeating(AlarmManager.ELAPSED_REALTIME_WAKEUP,
+				SystemClock.elapsedRealtime()+60000,
+				interval,
+				pi);
+	
+	// Ideally want to know if we just crossed a boundary and only fiddle the alarm then.
+	// Push this into another class and then all routes through code can just say setupAlarm.
+	
+    //alarm.cancel(pi);
 	}
 
 	/**

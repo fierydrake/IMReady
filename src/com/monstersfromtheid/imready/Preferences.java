@@ -1,19 +1,12 @@
 package com.monstersfromtheid.imready;
 
 import android.app.Activity;
-import android.app.AlarmManager;
-import android.app.PendingIntent;
-import android.content.Context;
-import android.content.Intent;
 import android.os.Bundle;
-import android.os.SystemClock;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemSelectedListener;
 import android.widget.ArrayAdapter;
 import android.widget.Spinner;
-
-import com.monstersfromtheid.imready.service.CheckMeetingsAlarmReceiver;
 
 public class Preferences extends Activity {
 
@@ -29,22 +22,8 @@ public class Preferences extends Activity {
 
 		    	// If we just set the notification to "never", cancel the cron job and disable the polling interval
 		    	// Do we need to cancel the alarm?  If the app is running, what's the state of the alarm?
-		    	if(pos == 0){
-		    		AlarmManager alarm = (AlarmManager)getSystemService(Context.ALARM_SERVICE);
-		    		Intent i = new Intent(Preferences.this, CheckMeetingsAlarmReceiver.class);
-		    		PendingIntent pi = PendingIntent.getBroadcast(Preferences.this, 0, i, 0);
-		    		alarm.cancel(pi);
-		    		
-		    		
-		    	} else {
-		    		AlarmManager alarm = (AlarmManager)getSystemService(Context.ALARM_SERVICE);
-		    		Intent i = new Intent(Preferences.this, CheckMeetingsAlarmReceiver.class);
-		    		PendingIntent pi = PendingIntent.getBroadcast(Preferences.this, 0, i, 0);
-		    		alarm.setInexactRepeating(AlarmManager.ELAPSED_REALTIME_WAKEUP,
-		    	    		SystemClock.elapsedRealtime()+60000,
-		    	    		IMReady.DEFAULT_CHECK_PERIOD,
-		    	    		pi);
-		    	}
+		    	IMReady.setNextAlarm(Preferences.this);
+
 		    	pollingSpinner.setEnabled( pos != 0 );
 
 	    	} else if (parent == Preferences.this.pollingSpinner) {
@@ -54,7 +33,7 @@ public class Preferences extends Activity {
 			}
 	    }
 
-	    public void onNothingSelected(AdapterView parent) {
+	    public void onNothingSelected(AdapterView<?> parent) {
 	      // Do nothing.
 	    }
 	}
@@ -77,7 +56,7 @@ public class Preferences extends Activity {
         pollingAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         pollingSpinner.setAdapter(pollingAdapter);
         pollingSpinner.setOnItemSelectedListener(new OnPollingItemSelectedListener());
-        pollingSpinner.setSelection(IMReady.getpollingInterval(this));
+        pollingSpinner.setSelection(IMReady.getPollingInterval(this));
         pollingSpinner.setEnabled( IMReady.getNotificationLevel(this) != 0 );
 	}
 }

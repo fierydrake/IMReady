@@ -27,6 +27,7 @@ import com.monstersfromtheid.imready.client.ServerAPI;
 import com.monstersfromtheid.imready.client.ServerAPI.Action;
 import com.monstersfromtheid.imready.client.ServerAPICallFailedException;
 import com.monstersfromtheid.imready.service.CheckMeetingsService;
+import com.monstersfromtheid.imready.service.CheckMeetingsService.MeetingsChangeEvent.EventType;
 
 public class MyMeetings extends ListActivity implements CheckMeetingsService.MeetingsChangeListener {
 	public static final int ACTIVITY_CREATE_MEETING = 0;
@@ -103,6 +104,24 @@ public class MyMeetings extends ListActivity implements CheckMeetingsService.Mee
 	}
         
 	public void onMeetingsChange(CheckMeetingsService.MeetingsChangeEvent e) {
+		switch (e.getEventType()) {
+		case NEW:
+			addMeeting(e.getMeeting().getName(),
+			           e.getMeeting().getId(),
+			           e.getMeeting().getState() == Meeting.STATE_READY);
+			adapter.notifyDataSetChanged();
+			break;
+			
+		case READY:
+			break;
+			
+		case CHANGE:
+			break;
+
+		default:
+			break;
+			
+		}
 /*        final ServerAPI api = new ServerAPI(userName);
 
         adapter = new SimpleAdapter(this, meetings, R.layout.meeting_list_item, from, to);

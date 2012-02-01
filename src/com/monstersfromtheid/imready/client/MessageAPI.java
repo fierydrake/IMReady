@@ -22,6 +22,13 @@ import com.monstersfromtheid.imready.IMReady;
 
 public class MessageAPI {
 	
+	/**
+	 * Convert the JSON representing a single meeting Meeting objects
+	 * 
+	 * @param meetingsJSON
+	 * @return
+	 * @throws ServerAPICallFailedException
+	 */
 	public static Meeting meeting(String meetingsJSON) throws ServerAPICallFailedException {
 	    try {
 	    	JSONObject meetingJSON = (JSONObject)new JSONTokener(meetingsJSON).nextValue();
@@ -44,12 +51,20 @@ public class MessageAPI {
 	    }
 	}
 
+	/**
+	 * Convert the JSON representing the JSON array of meetings for a user into a List of Meeting objects
+	 * 
+	 * @param userMeetingsJSON
+	 * @return
+	 * @throws MessageAPIException
+	 */
 	public static List<Meeting> userMeetings(String userMeetingsJSON) throws MessageAPIException {
 	    
 		try {
 			ArrayList<Meeting> meetings = new ArrayList<Meeting>();
 			JSONArray meetingsJSON = (JSONArray)new JSONTokener(userMeetingsJSON).nextValue();
 			for (int j=0; j<meetingsJSON.length(); j++) {
+				// TODO - can we not call meeting(string) at this point?
 				JSONObject meetingJSON = meetingsJSON.getJSONObject(j);
 				ArrayList<Participant> participants = new ArrayList<Participant>();
 				JSONArray participantsJSON = meetingJSON.getJSONArray("participants");
