@@ -23,7 +23,6 @@ import com.monstersfromtheid.imready.client.MessageAPI;
 import com.monstersfromtheid.imready.client.MessageAPIException;
 import com.monstersfromtheid.imready.client.ServerAPI;
 import com.monstersfromtheid.imready.client.ServerAPICallFailedException;
-import com.monstersfromtheid.imready.service.CheckMeetingsService.MeetingsChangeEvent.EventType;
 
 public class CheckMeetingsService extends IntentService {
 
@@ -38,26 +37,15 @@ public class CheckMeetingsService extends IntentService {
             return CheckMeetingsService.this;
         }
     }
+    
+    /*
+     * Andy: Mike, you might want to ask me something *knowing grin*
+     */
     public static class MeetingsChangeEvent extends EventObject {
 		private static final long serialVersionUID = 1L;
-		
-		public enum EventType {NEW, READY, CHANGE};
-		
-		private EventType eventType = EventType.NEW;
-		private Meeting meeting;
 
-		public MeetingsChangeEvent(Object source, EventType eventType, Meeting meeting) {
+		public MeetingsChangeEvent(Object source) {
 			super(source);
-			this.eventType = eventType;
-			this.meeting = meeting;
-		}
-
-		public EventType getEventType() {
-			return eventType;
-		}
-
-		public Meeting getMeeting() {
-			return meeting;
 		}
 	}
     public interface MeetingsChangeListener {
@@ -74,6 +62,44 @@ public class CheckMeetingsService extends IntentService {
     	for (MeetingsChangeListener listener : listeners) {
     		listener.onMeetingsChange(e);
     	}
+    }
+    public static class MeetingUpdate {
+    	public enum UpdateType { NEW, CHANGE };
+    	
+    	private Meeting updatedMeeting;
+    	private UpdateType updateType;
+    	
+    	public MeetingUpdate(Meeting updatedMeeting, UpdateType updateType) {
+    		this.updatedMeeting = updatedMeeting;
+    		this.updateType = updateType;
+    	}
+    	
+    	public UpdateType getUpdateType() { return updateType; }
+    	public Meeting getUpdatedMeeting() { return updatedMeeting; }
+    }
+    // TODO: Add 1 OR 2 public methods that the UI activities can call
+    //       to get (a) the status quo, (b) the meeting changes since last "rollup"
+    public synchronized List<Meeting> getMeetings() throws MessageAPIException { /* rethrow a more appropriate exception? */
+    	return MessageAPI.userMeetings(IMReady.getLastSeenMeetingsJSON(this));
+    }
+    public synchronized List<MeetingUpdate> getMeetingUpdates() throws MessageAPIException { /* rethrow a more appropriate exception? */
+    	List<Meeting> userAwareMeetings = MessageAPI.userMeetings(IMReady.getUserAwareMeetingsJSON(this));
+    	List<Meeting> lastSeenMeetings = MessageAPI.userMeetings(IMReady.getLastSeenMeetingsJSON(this));
+    	
+    	List<Meeting> newMeetings = IMReady.newMeetings(userAwareMeetings, lastSeenMeetings);
+    	List<Meeting> changedMeetings = IMReady.changedMeetings(userAwareMeetings, lastSeenMeetings);
+    	List<MeetingUpdate> updates = new ArrayList<MeetingUpdate>(newMeetings.size() + changedMeetings.size());
+    	
+    	for (Meeting newMeeting : newMeetings) { updates.add(new MeetingUpdate(newMeeting, MeetingUpdate.UpdateType.NEW)); }
+    	for (Meeting changedMeeting : changedMeetings) { updates.add(new MeetingUpdate(changedMeeting, MeetingUpdate.UpdateType.CHANGE)); }
+    	//IMReady.readyMeetings(meetings); // ? Surely we only want meetings that changed to ready since we last looked?
+    	
+    	return updates;
+    }
+    // TODO: Add a method to rollup the "last seen" up into the "last user aware" JSON
+    public synchronized void rollupMeetingUpdates() { rollupMeetingUpdates(IMReady.getLastSeenMeetingsJSON(this)); }
+    public synchronized void rollupMeetingUpdates(String lastSeenMeetingsJSON) {
+    	IMReady.setUserAwareMeetingsJSON(lastSeenMeetingsJSON, this);
     }
     
 	public CheckMeetingsService(String name) {
@@ -213,15 +239,18 @@ public class CheckMeetingsService extends IntentService {
 					}
 				}
 				
-				if(newM > 0){
-					broadcastMeetingEvents(EventType.NEW, newMeetings);
+				if (newM > 0 || readyM > 0 || changedMeetings.size() > 0) {
+					fireMeetingsChanged(new MeetingsChangeEvent(this));
 				}
-				if(readyM > 0){
-					broadcastMeetingEvents(EventType.READY, readyMeetings);
-				}
-				if(changedMeetings.size() > 0){
-					broadcastMeetingEvents(EventType.CHANGE, changedMeetings);
-				}
+//				if(newM > 0){
+//					broadcastMeetingEvents(EventType.NEW, newMeetings);
+//				}
+//				if(readyM > 0){
+//					broadcastMeetingEvents(EventType.READY, readyMeetings);
+//				}
+//				if(changedMeetings.size() > 0){
+//					broadcastMeetingEvents(EventType.CHANGE, changedMeetings);
+//				}
 
 				CharSequence notificationTitle = getString( R.string.app_name );
 				Context context = getApplicationContext();
@@ -238,13 +267,13 @@ public class CheckMeetingsService extends IntentService {
 		}
 	}
 
-	protected void broadcastMeetingEvents(EventType eventType, List<Meeting> meetings){
-		Iterator<Meeting> iterNewMeeting = meetings.iterator();
-		while(iterNewMeeting.hasNext()){
-			MeetingsChangeEvent e = new MeetingsChangeEvent(this, eventType, iterNewMeeting.next());
-			fireMeetingsChanged(e);
-		}
-	}
+//	protected void broadcastMeetingEvents(EventType eventType, List<Meeting> meetings){
+//		Iterator<Meeting> iterNewMeeting = meetings.iterator();
+//		while(iterNewMeeting.hasNext()){
+//			MeetingsChangeEvent e = new MeetingsChangeEvent(this, eventType, iterNewMeeting.next());
+//			fireMeetingsChanged(e);
+//		}
+//	}
 
 	protected void onHandleIntent(Intent intent) {
 		try {

@@ -10,6 +10,7 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.IBinder;
@@ -17,17 +18,16 @@ import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.View.OnClickListener;
+import android.widget.AdapterView;
+import android.widget.AdapterView.OnItemClickListener;
+import android.widget.Button;
 import android.widget.SimpleAdapter;
-import android.widget.Toast;
+import android.widget.TextView;
 
 import com.monstersfromtheid.imready.client.Meeting;
-import com.monstersfromtheid.imready.client.MessageAPI;
 import com.monstersfromtheid.imready.client.MessageAPIException;
-import com.monstersfromtheid.imready.client.ServerAPI;
-import com.monstersfromtheid.imready.client.ServerAPI.Action;
-import com.monstersfromtheid.imready.client.ServerAPICallFailedException;
 import com.monstersfromtheid.imready.service.CheckMeetingsService;
-import com.monstersfromtheid.imready.service.CheckMeetingsService.MeetingsChangeEvent.EventType;
 
 public class MyMeetings extends ListActivity implements CheckMeetingsService.MeetingsChangeListener {
 	public static final int ACTIVITY_CREATE_MEETING = 0;
@@ -37,41 +37,8 @@ public class MyMeetings extends ListActivity implements CheckMeetingsService.Mee
     private int[] to = new int[] { R.id.meeting_list_item_name,  
             R.id.meeting_list_item_readiness };
     private SimpleAdapter adapter; 
+    private Button createMeetingButton; 
 
-    private class RefreshMeetingsAction extends Action<List<Meeting>> {
-    	private ServerAPI api;
-    	public RefreshMeetingsAction(ServerAPI api) {
-    		this.api = api;
-    	}
-        @Override
-        public List<Meeting> action() throws ServerAPICallFailedException {
-        	try {
-        		String s = api.userMeetings(api.getRequestingUserId());
-    			storeMeetingJSON(s);
-        		return MessageAPI.userMeetings( s );
-        	} catch (MessageAPIException e) {
-        		// Just a quick hack to get me beyond this. 
-				throw new ServerAPICallFailedException(e.getMessage(), e);
-			}
-        }
-        @Override
-        public void success(List<Meeting> meetings) {
-            clearMeetings();
-            for (Meeting meeting : meetings) {
-                addMeeting(
-                		meeting.getName(),
-                		meeting.getId(),
-                		meeting.getState() == Meeting.STATE_READY
-                		);
-            }
-            adapter.notifyDataSetChanged();
-        }
-        @Override
-        public void failure(ServerAPICallFailedException e) {
-            Toast.makeText(MyMeetings.this, "Failed: " + e, Toast.LENGTH_LONG).show();
-        }    	
-    }
-    
 	@Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -79,10 +46,29 @@ public class MyMeetings extends ListActivity implements CheckMeetingsService.Mee
         // Set initial look of the activity
         View loadingSpinner = (View)getLayoutInflater().inflate(R.layout.meetings_loading_spinner, null);
         getListView().addHeaderView(loadingSpinner);
+
+        // Initialize the elements that will be used by the activity
+        adapter = new SimpleAdapter(this, meetings, R.layout.meeting_list_item, from, to);
+        adapter.setViewBinder(new SimpleAdapter.ViewBinder() {
+            public boolean setViewValue(View view, Object data, String textRepresentation) {
+                if (view.getId() == R.id.meeting_list_item_readiness) {
+                    ((TextView)view).setTextColor((Boolean)data ? Color.GREEN : Color.RED);
+                    ((TextView)view).setText((Boolean)data ? "Ready" : "Not ready");
+                    return true;
+                }
+                return false;
+            }
+        });
+        createMeetingButton = (Button)getLayoutInflater().inflate(R.layout.meetings_create_meeting_button, null);
+        createMeetingButton.setOnClickListener(new OnClickListener() {
+        	public void onClick(View v) {
+        		startActivityForResult(new Intent(MyMeetings.this, CreateMeeting.class), ACTIVITY_CREATE_MEETING);
+        	}
+        });
 	}
 	
+    private CheckMeetingsService meetingsService;
 	private ServiceConnection serviceConnection = new ServiceConnection() {
-	    private CheckMeetingsService meetingsService;
 		public void onServiceConnected(ComponentName className, IBinder service) {
 			meetingsService = ((CheckMeetingsService.LocalBinder)service).getService();
 			meetingsService.addMeetingsChangeListener(MyMeetings.this);
@@ -95,57 +81,12 @@ public class MyMeetings extends ListActivity implements CheckMeetingsService.Mee
 	
 	@Override
 	public void onStart() {
+		// TODO: bindService returns a boolean - should we be checking it?
         bindService(new Intent(this, CheckMeetingsService.class), serviceConnection, Context.BIND_NOT_FOREGROUND); // guessing on this flag
-	}
-	
-	@Override
-	public void onStop() {
-		unbindService(serviceConnection);
-	}
         
-	public void onMeetingsChange(CheckMeetingsService.MeetingsChangeEvent e) {
-		switch (e.getEventType()) {
-		case NEW:
-			addMeeting(e.getMeeting().getName(),
-			           e.getMeeting().getId(),
-			           e.getMeeting().getState() == Meeting.STATE_READY);
-			adapter.notifyDataSetChanged();
-			break;
-			
-		case READY:
-			break;
-			
-		case CHANGE:
-			break;
+        processMeetingsUpdate();
 
-		default:
-			break;
-			
-		}
-/*        final ServerAPI api = new ServerAPI(userName);
-
-        adapter = new SimpleAdapter(this, meetings, R.layout.meeting_list_item, from, to);
-//        initialiseActivityFromLocalKnowledge(meetingName, meetingId, userNickName, userName);
-        ServerAPI.performInBackground(new RefreshMeetingsAction(api));
-        adapter.setViewBinder(new SimpleAdapter.ViewBinder() {
-            public boolean setViewValue(View view, Object data, String textRepresentation) {
-                if (view.getId() == R.id.meeting_list_item_readiness) {
-                    ((TextView)view).setTextColor((Boolean)data ? Color.GREEN : Color.RED);
-                    ((TextView)view).setText((Boolean)data ? "Ready" : "Not ready");
-                    return true;
-                }
-                return false;
-            }
-        });
-
-        final Button createMeeting = (Button)getLayoutInflater().inflate(R.layout.meetings_create_meeting_button, null);
-        createMeeting.setOnClickListener(new OnClickListener() {
-        	public void onClick(View v) {
-        		startActivityForResult(new Intent(MyMeetings.this, CreateMeeting.class), ACTIVITY_CREATE_MEETING);
-        	}
-        });
-        getListView().addFooterView(createMeeting);
-        
+       	getListView().addFooterView(createMeetingButton);
         getListView().setOnItemClickListener(new OnItemClickListener() {
 			public void onItemClick(AdapterView parentView, View childView, int position, long id) {
 				HashMap<String, ?> info = meetings.get(position);
@@ -156,16 +97,56 @@ public class MyMeetings extends ListActivity implements CheckMeetingsService.Mee
 			}
         });
         setListAdapter(adapter);
-    */
+	}
+	
+	@Override
+	public void onStop() {
+		unbindService(serviceConnection);
+	}
+        
+	public void processMeetingsUpdate() {
+		try {
+	        List<Meeting> meetings;
+	        List<CheckMeetingsService.MeetingUpdate> updates;
+	        synchronized(meetingsService) {
+		        // Get the status quo of meetings from the service
+		        meetings = meetingsService.getMeetings();
+		        // Get the meeting updates since last rollup from the service
+		        updates = meetingsService.getMeetingUpdates();
+		        // Tell the service to rollup the updates
+		        meetingsService.rollupMeetingUpdates();
+	        }
+	        
+	        // Set-up the list model with the meetings and annotations
+	        updateView(meetings, updates);
+		} catch (MessageAPIException e) {
+			// TODO: Handle failure - show error message...?
+		}
+	}
+	
+	public void updateView(List<Meeting> meetings, List<CheckMeetingsService.MeetingUpdate> updates) {
+		clearMeetings();
+		for (Meeting meeting : meetings) {
+			addMeeting(meeting.getName(), meeting.getId(), meeting.getState() == Meeting.STATE_READY);
+		}
+		for (CheckMeetingsService.MeetingUpdate update : updates) {
+			decorateMeeting(update.getUpdatedMeeting().getId(), update.getUpdateType());
+		}
+		adapter.notifyDataSetChanged();
+	}
+	
+	public void onMeetingsChange(CheckMeetingsService.MeetingsChangeEvent e) {
+		processMeetingsUpdate();
 	}
 
 	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         /* If returning after ACTIVITY_GOT_ACCOUNT then just exit this Activity */
         if (requestCode == ACTIVITY_CREATE_MEETING) {
-        	String userName = IMReady.getUserName(this);
-            
-            final ServerAPI api = new ServerAPI(userName);
-            ServerAPI.performInBackground(new RefreshMeetingsAction(api));
+//			  TODO: Replace with appropriate code
+//            String userName = IMReady.getUserName(this);
+//            
+//            final ServerAPI api = new ServerAPI(userName);
+//            ServerAPI.performInBackground(new RefreshMeetingsAction(api));
 
             if(resultCode == RESULT_OK) {
             	int meetingId = data.getIntExtra(IMReady.RETURNS_MEETING_ID, -1);
@@ -188,7 +169,22 @@ public class MyMeetings extends ListActivity implements CheckMeetingsService.Mee
         userItem.put("id", meetingId);
         userItem.put("name", name);
         userItem.put("readiness", readiness);
+        userItem.put("recentlyCreated", false);
+        userItem.put("recentlyChanged", false);
         meetings.add(userItem);
+    }
+    
+    private void decorateMeeting(int meetingId, CheckMeetingsService.MeetingUpdate.UpdateType type) {
+    	switch (type) {
+    	case NEW:
+    		// TODO: find meeting in "meetings", put recentlyCreated => true
+    		break;
+    	case CHANGE:
+    		// TODO: find meeting in "meetings", put recentlyChanged => true
+    		break;
+		default:
+			// Do nothing
+    	}
     }
 
     @Override
@@ -198,10 +194,10 @@ public class MyMeetings extends ListActivity implements CheckMeetingsService.Mee
         return true;
     }
     
-    private void storeMeetingJSON(String s){
-    	IMReady.setUserAwareMeetingsJSON(s, this);
-    	IMReady.setDirtyMeetings(new ArrayList<Integer>(), this);
-    }
+//    private void storeMeetingJSON(String s){
+//    	IMReady.setUserAwareMeetingsJSON(s, this);
+//    	IMReady.setDirtyMeetings(new ArrayList<Integer>(), this);
+//    }
     
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
