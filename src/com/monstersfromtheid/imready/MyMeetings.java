@@ -2,6 +2,7 @@ package com.monstersfromtheid.imready;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.prefs.Preferences;
 
@@ -11,6 +12,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.graphics.Color;
+import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.IBinder;
@@ -22,6 +24,7 @@ import android.view.View.OnClickListener;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
 import android.widget.Button;
+import android.widget.ImageView;
 import android.widget.SimpleAdapter;
 import android.widget.TextView;
 
@@ -32,10 +35,11 @@ import com.monstersfromtheid.imready.service.CheckMeetingsService;
 public class MyMeetings extends ListActivity implements CheckMeetingsService.MeetingsChangeListener {
 	public static final int ACTIVITY_CREATE_MEETING = 0;
 
-	private ArrayList<HashMap<String, ?>> meetings = new ArrayList<HashMap<String, ?>>();
-    private String[] from = new String[] { "name", "readiness" };
+	private ArrayList<HashMap<String, Object>> meetings = new ArrayList<HashMap<String, Object>>();
+    private String[] from = new String[] { "name", "readiness", "recently" };
     private int[] to = new int[] { R.id.meeting_list_item_name,  
-            R.id.meeting_list_item_readiness };
+            R.id.meeting_list_item_readiness,
+            R.id.meeting_list_item_decoration};
     private SimpleAdapter adapter; 
     private Button createMeetingButton; 
 
@@ -51,12 +55,23 @@ public class MyMeetings extends ListActivity implements CheckMeetingsService.Mee
         adapter = new SimpleAdapter(this, meetings, R.layout.meeting_list_item, from, to);
         adapter.setViewBinder(new SimpleAdapter.ViewBinder() {
             public boolean setViewValue(View view, Object data, String textRepresentation) {
-                if (view.getId() == R.id.meeting_list_item_readiness) {
-                    ((TextView)view).setTextColor((Boolean)data ? Color.GREEN : Color.RED);
+            	switch (view.getId()) {
+				case R.id.meeting_list_item_readiness:
+					((TextView)view).setTextColor((Boolean)data ? Color.GREEN : Color.RED);
                     ((TextView)view).setText((Boolean)data ? "Ready" : "Not ready");
-                    return true;
-                }
-                return false;
+					break;
+					
+				case R.id.meeting_list_item_decoration:
+					if( ((String)data).equalsIgnoreCase("changed") ) {
+						((ImageView)view).setImageResource(R.drawable.decoration_change);
+					} else if ( ((String)data).equalsIgnoreCase("created") ){
+						((ImageView)view).setImageResource(R.drawable.decoration_change);
+					}
+
+				default:
+					return false;
+				}
+            	return true;
             }
         });
         createMeetingButton = (Button)getLayoutInflater().inflate(R.layout.meetings_create_meeting_button, null);
@@ -169,21 +184,27 @@ public class MyMeetings extends ListActivity implements CheckMeetingsService.Mee
         userItem.put("id", meetingId);
         userItem.put("name", name);
         userItem.put("readiness", readiness);
-        userItem.put("recentlyCreated", false);
-        userItem.put("recentlyChanged", false);
+        userItem.put("recently", "none");
         meetings.add(userItem);
     }
     
     private void decorateMeeting(int meetingId, CheckMeetingsService.MeetingUpdate.UpdateType type) {
-    	switch (type) {
-    	case NEW:
-    		// TODO: find meeting in "meetings", put recentlyCreated => true
+    	Iterator<HashMap<String, Object>> iterMeetings = meetings.iterator();
+    	while(iterMeetings.hasNext()){
+    		HashMap<String, Object> meetingItem = iterMeetings.next();
+    		if( (Integer)meetingItem.get("id") == meetingId ){
+    			switch (type) {
+    			case NEW:
+    				meetingItem.put("recently", "created");
+    				break;
+    			case CHANGE:
+    				meetingItem.put("recently", "changed");
+    				break;
+    			default:
+    				// Do nothing
+    			}
+    		}
     		break;
-    	case CHANGE:
-    		// TODO: find meeting in "meetings", put recentlyChanged => true
-    		break;
-		default:
-			// Do nothing
     	}
     }
 

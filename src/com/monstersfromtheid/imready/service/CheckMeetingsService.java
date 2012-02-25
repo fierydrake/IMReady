@@ -182,16 +182,13 @@ public class CheckMeetingsService extends IntentService {
 				List<Integer> newDirtyMeetings = IMReady.mergeDirtyMeetingList(IMReady.getDirtyMeetings(this), changedMeetings);
 				IMReady.setDirtyMeetings(newDirtyMeetings, this);
 				int changeM = 0;
-				if( notificationLevel > 0 ){
+				if( notificationLevel > 1 ){
 					changeM = newDirtyMeetings.size();
 				}
 
-				// Note that this should be done by MyMeetings.  So we accumulate changes for notification message and don't loose any changes.
-				//IMReady.setUserAwareMeetingsJSON(latestJSON, this);
-
 				IMReady.setLastSeenMeetingsJSON(latestJSON, this);
 
-				// TODO Do we want to increase polling frequency when we know we have a new meeting?
+				// QUESTION Do we want to increase polling frequency when we know we have a new meeting?
 
 				// Now we know what's changed, it's time to generate a notification
 				Notification notification = new Notification(R.drawable.notification, "IMReady Meetings", System.currentTimeMillis());
@@ -200,7 +197,6 @@ public class CheckMeetingsService extends IntentService {
 				notification.flags |= Notification.FLAG_SHOW_LIGHTS;
 				notification.ledOnMS = 300;
 				notification.ledOffMS = 1100;
-				//notification.defaults |= Notification.DEFAULT_LIGHTS;
 
 				// [(n) new[,] ][(r) ready[ and] ][(c) changed]
 				String notificationMessage = "";
@@ -242,15 +238,6 @@ public class CheckMeetingsService extends IntentService {
 				if (newM > 0 || readyM > 0 || changedMeetings.size() > 0) {
 					fireMeetingsChanged(new MeetingsChangeEvent(this));
 				}
-//				if(newM > 0){
-//					broadcastMeetingEvents(EventType.NEW, newMeetings);
-//				}
-//				if(readyM > 0){
-//					broadcastMeetingEvents(EventType.READY, readyMeetings);
-//				}
-//				if(changedMeetings.size() > 0){
-//					broadcastMeetingEvents(EventType.CHANGE, changedMeetings);
-//				}
 
 				CharSequence notificationTitle = getString( R.string.app_name );
 				Context context = getApplicationContext();
@@ -266,14 +253,6 @@ public class CheckMeetingsService extends IntentService {
 			}
 		}
 	}
-
-//	protected void broadcastMeetingEvents(EventType eventType, List<Meeting> meetings){
-//		Iterator<Meeting> iterNewMeeting = meetings.iterator();
-//		while(iterNewMeeting.hasNext()){
-//			MeetingsChangeEvent e = new MeetingsChangeEvent(this, eventType, iterNewMeeting.next());
-//			fireMeetingsChanged(e);
-//		}
-//	}
 
 	protected void onHandleIntent(Intent intent) {
 		try {

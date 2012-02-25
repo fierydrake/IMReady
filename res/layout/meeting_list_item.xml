@@ -3,7 +3,15 @@
     android:orientation="horizontal"
 	android:layout_width="match_parent"
 	android:layout_height="wrap_content">
-	
+	
+    <ImageView android:id="@+id/meeting_list_item_decoration"
+        android:layout_width="wrap_content"
+	    android:layout_height="wrap_content"
+	    android:layout_marginRight="5dp"
+	    android:layout_gravity="top"
+	    android:src="@drawable/decoration_none">
+    </ImageView>
+
 	<TextView android:id="@+id/meeting_list_item_name"
 	    android:layout_width="match_parent"
 	    android:layout_height="match_parent"

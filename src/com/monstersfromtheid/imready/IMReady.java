@@ -188,7 +188,7 @@ public class IMReady {
 				interval,
 				pi);
 	
-	// Ideally want to know if we just crossed a boundary and only fiddle the alarm then.
+	// TODO Ideally want to know if we just crossed a boundary and only fiddle the alarm then.
 	// Push this into another class and then all routes through code can just say setupAlarm.
 	
     //alarm.cancel(pi);
@@ -285,7 +285,7 @@ public class IMReady {
 	/**
 	 * Return a list of Integers containing the union of <b>knownDirt</b> and the 
 	 * meeting ID numbers in <b>newDirt</b>.  Note that any entries in <b>newDirt</b>
-	 * that are in a ready state are ignored.
+	 * that are in a ready state are removed from <b>knownDirt</b>.
 	 * 
 	 * @param knownDirt
 	 * @param newDirt
@@ -298,8 +298,14 @@ public class IMReady {
 		while(iterNew.hasNext()){
 			Meeting m = (Meeting)iterNew.next();
 			Integer i = new Integer( m.getId() );
+			// If the change isn't already in our list, and the change isn't for a ready meeting, add it
 			if( ! knownDirt.contains(i) && m.getState() != 1 ){
 				fullDirt.add(i);
+			}
+			// If the change is already in our list, but the meeting is now ready, remove from 
+			// the change list; this will already be counted as a ready meeting
+			if( fullDirt.contains(i) && m.getState() == 1 ){
+				fullDirt.remove(i);
 			}
 		}
 

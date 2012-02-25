@@ -28,8 +28,7 @@ main();
 sub main{
     debug('Starting server on port <' . $listenerPort . '>');
     while($running){
-        # TODO - WE HAVE TO ADD A TIMEOUT HERE OR A SINGLE OPEN WILL LOCK THE SERVER!
-        my $daemon = HTTP::Daemon->new( LocalPort => $listenerPort ) || die "Oops - Failed to even start a server.";
+        my $daemon = HTTP::Daemon->new( LocalPort => $listenerPort, Timeout => 15 ) || die "Oops - Failed to even start a server.";
 
         while (my $connection = $daemon->accept) {
             debug('Accepted connection');
@@ -98,6 +97,8 @@ sub main{
                 } else {
                     $connection->send_error(500, 'Internal error');
                 }
+            } else {
+                debug('Invalid connection');
             }
             debug('Done with connection');
             $connection->close;
