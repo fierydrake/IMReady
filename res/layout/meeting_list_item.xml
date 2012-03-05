@@ -1,33 +1,33 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:orientation="horizontal"
 	android:layout_width="match_parent"
 	android:layout_height="wrap_content">
-	
+
     <ImageView android:id="@+id/meeting_list_item_decoration"
         android:layout_width="wrap_content"
-	    android:layout_height="wrap_content"
-	    android:layout_marginRight="5dp"
-	    android:layout_gravity="top"
-	    android:src="@drawable/decoration_none">
+        android:layout_height="wrap_content"
+        android:layout_marginRight="5dp"
+        android:layout_gravity="top"
+        android:src="@drawable/decoration_none">
     </ImageView>
 
 	<TextView android:id="@+id/meeting_list_item_name"
-	    android:layout_width="match_parent"
-	    android:layout_height="match_parent"
-	   	android:layout_alignParentLeft="true"
+	    android:layout_width="0dip"
+	    android:layout_height="wrap_content"
+	   	android:layout_weight="1"
 	   	android:padding="10dp"
 	    android:textSize="16sp"
 	    android:textColor="@android:color/white"
-	    android:text="@string/app_name">
+	    android:text="@string/create_meeting_name_label">
 
 	</TextView>
 	<TextView android:id="@+id/meeting_list_item_readiness"
 	    android:layout_width="wrap_content"
-	    android:layout_height="match_parent"
-	    android:layout_alignParentRight="true"
+	    android:layout_height="wrap_content"
 	    android:padding="10dp"
 	    android:textSize="16sp"
 	    android:text="@string/app_name">
 	</TextView>
-</RelativeLayout>
+
+</LinearLayout>

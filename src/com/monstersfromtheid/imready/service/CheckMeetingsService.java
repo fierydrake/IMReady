@@ -1,8 +1,5 @@
 package com.monstersfromtheid.imready.service;
 
-import java.util.ArrayList;
-import java.util.EventObject;
-import java.util.Iterator;
 import java.util.List;
 
 import android.app.IntentService;
@@ -12,11 +9,11 @@ import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.net.ConnectivityManager;
-import android.os.Binder;
 import android.os.PowerManager;
 
 import com.monstersfromtheid.imready.IMReady;
 import com.monstersfromtheid.imready.MyMeetings;
+import com.monstersfromtheid.imready.MyMeetings.ResponseReceiver;
 import com.monstersfromtheid.imready.R;
 import com.monstersfromtheid.imready.client.Meeting;
 import com.monstersfromtheid.imready.client.MessageAPI;
@@ -31,76 +28,32 @@ public class CheckMeetingsService extends IntentService {
 	private static final int NOTIFICATION_ID = 1;
 	private static ServerAPI api;
 	private static String userName;
-	
-    public class LocalBinder extends Binder {
-        public CheckMeetingsService getService() {
-            return CheckMeetingsService.this;
-        }
-    }
-    
-    /*
-     * Andy: Mike, you might want to ask me something *knowing grin*
-     */
-    public static class MeetingsChangeEvent extends EventObject {
-		private static final long serialVersionUID = 1L;
 
-		public MeetingsChangeEvent(Object source) {
-			super(source);
-		}
-	}
-    public interface MeetingsChangeListener {
-    	public void onMeetingsChange(MeetingsChangeEvent e);
-    }
-    List<MeetingsChangeListener> listeners = new ArrayList<MeetingsChangeListener>(2);
-    public void addMeetingsChangeListener(MeetingsChangeListener listener) {
-    	listeners.add(listener);
-    }
-    public void removeMeetingsChangeListener(MeetingsChangeListener listener) {
-    	listeners.remove(listener);
-    }
-    public void fireMeetingsChanged(MeetingsChangeEvent e){
-    	for (MeetingsChangeListener listener : listeners) {
-    		listener.onMeetingsChange(e);
-    	}
-    }
-    public static class MeetingUpdate {
-    	public enum UpdateType { NEW, CHANGE };
-    	
-    	private Meeting updatedMeeting;
-    	private UpdateType updateType;
-    	
-    	public MeetingUpdate(Meeting updatedMeeting, UpdateType updateType) {
-    		this.updatedMeeting = updatedMeeting;
-    		this.updateType = updateType;
-    	}
-    	
-    	public UpdateType getUpdateType() { return updateType; }
-    	public Meeting getUpdatedMeeting() { return updatedMeeting; }
-    }
     // TODO: Add 1 OR 2 public methods that the UI activities can call
     //       to get (a) the status quo, (b) the meeting changes since last "rollup"
-    public synchronized List<Meeting> getMeetings() throws MessageAPIException { /* rethrow a more appropriate exception? */
-    	return MessageAPI.userMeetings(IMReady.getLastSeenMeetingsJSON(this));
-    }
-    public synchronized List<MeetingUpdate> getMeetingUpdates() throws MessageAPIException { /* rethrow a more appropriate exception? */
-    	List<Meeting> userAwareMeetings = MessageAPI.userMeetings(IMReady.getUserAwareMeetingsJSON(this));
-    	List<Meeting> lastSeenMeetings = MessageAPI.userMeetings(IMReady.getLastSeenMeetingsJSON(this));
-    	
-    	List<Meeting> newMeetings = IMReady.newMeetings(userAwareMeetings, lastSeenMeetings);
-    	List<Meeting> changedMeetings = IMReady.changedMeetings(userAwareMeetings, lastSeenMeetings);
-    	List<MeetingUpdate> updates = new ArrayList<MeetingUpdate>(newMeetings.size() + changedMeetings.size());
-    	
-    	for (Meeting newMeeting : newMeetings) { updates.add(new MeetingUpdate(newMeeting, MeetingUpdate.UpdateType.NEW)); }
-    	for (Meeting changedMeeting : changedMeetings) { updates.add(new MeetingUpdate(changedMeeting, MeetingUpdate.UpdateType.CHANGE)); }
-    	//IMReady.readyMeetings(meetings); // ? Surely we only want meetings that changed to ready since we last looked?
-    	
-    	return updates;
-    }
-    // TODO: Add a method to rollup the "last seen" up into the "last user aware" JSON
-    public synchronized void rollupMeetingUpdates() { rollupMeetingUpdates(IMReady.getLastSeenMeetingsJSON(this)); }
-    public synchronized void rollupMeetingUpdates(String lastSeenMeetingsJSON) {
-    	IMReady.setUserAwareMeetingsJSON(lastSeenMeetingsJSON, this);
-    }
+//    public synchronized List<Meeting> getMeetings() throws MessageAPIException { /* rethrow a more appropriate exception? */
+//    	return MessageAPI.userMeetings(IMReady.getLastSeenMeetingsJSON(this));
+//    }
+//
+//    public synchronized List<MeetingUpdate> getMeetingUpdates() throws MessageAPIException { /* rethrow a more appropriate exception? */
+//    	List<Meeting> userAwareMeetings = MessageAPI.userMeetings(IMReady.getUserAwareMeetingsJSON(this));
+//    	List<Meeting> lastSeenMeetings = MessageAPI.userMeetings(IMReady.getLastSeenMeetingsJSON(this));
+//    	
+//    	List<Meeting> newMeetings = IMReady.newMeetings(userAwareMeetings, lastSeenMeetings);
+//    	List<Meeting> changedMeetings = IMReady.changedMeetings(userAwareMeetings, lastSeenMeetings);
+//    	List<MeetingUpdate> updates = new ArrayList<MeetingUpdate>(newMeetings.size() + changedMeetings.size());
+//    	
+//    	for (Meeting newMeeting : newMeetings) { updates.add(new MeetingUpdate(newMeeting, MeetingUpdate.UpdateType.NEW)); }
+//    	for (Meeting changedMeeting : changedMeetings) { updates.add(new MeetingUpdate(changedMeeting, MeetingUpdate.UpdateType.CHANGE)); }
+//    	//IMReady.readyMeetings(meetings); // ? Surely we only want meetings that changed to ready since we last looked?
+//    	
+//    	return updates;
+//    }
+//    // TODO: Add a method to rollup the "last seen" up into the "last user aware" JSON
+//    public synchronized void rollupMeetingUpdates() { rollupMeetingUpdates(IMReady.getLastSeenMeetingsJSON(this)); }
+//    public synchronized void rollupMeetingUpdates(String lastSeenMeetingsJSON) {
+//    	IMReady.setUserAwareMeetingsJSON(lastSeenMeetingsJSON, this);
+//    }
     
 	public CheckMeetingsService(String name) {
 		super(name);
@@ -149,9 +102,6 @@ public class CheckMeetingsService extends IntentService {
 	 */
 	protected void generateNotifications(String latestJSON){
 		int notificationLevel = IMReady.getNotificationLevel(this);
-		if (notificationLevel == 0) {
-			return;
-		}
 
 		// Assume the notification lasts until it is acted on by the user.
 		// This means that I only create a new notification if I saw something change since I last looked.
@@ -182,11 +132,19 @@ public class CheckMeetingsService extends IntentService {
 				List<Integer> newDirtyMeetings = IMReady.mergeDirtyMeetingList(IMReady.getDirtyMeetings(this), changedMeetings);
 				IMReady.setDirtyMeetings(newDirtyMeetings, this);
 				int changeM = 0;
-				if( notificationLevel > 1 ){
+				if (notificationLevel == 0) {
+					return;
+				} else if( notificationLevel > 1 ){
 					changeM = newDirtyMeetings.size();
 				}
 
 				IMReady.setLastSeenMeetingsJSON(latestJSON, this);
+				
+				// Broadcast to any registered receivers that something has changed
+				Intent broadcastIntent = new Intent();
+				broadcastIntent.setAction(ResponseReceiver.ACTION_RESP);
+				broadcastIntent.addCategory(Intent.CATEGORY_DEFAULT);
+				sendBroadcast(broadcastIntent);
 
 				// QUESTION Do we want to increase polling frequency when we know we have a new meeting?
 
@@ -233,10 +191,6 @@ public class CheckMeetingsService extends IntentService {
 							return;
 						}
 					}
-				}
-				
-				if (newM > 0 || readyM > 0 || changedMeetings.size() > 0) {
-					fireMeetingsChanged(new MeetingsChangeEvent(this));
 				}
 
 				CharSequence notificationTitle = getString( R.string.app_name );

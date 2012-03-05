@@ -82,16 +82,23 @@ public class ViewMeeting extends ListActivity {
         String meetingPath = internalMeetingUri.getEncodedPath();
         Pattern p = Pattern.compile("/meeting/(\\d+)/(.*)");
         Matcher m = p.matcher(meetingPath);
-        if (!m.matches()) { return; } // TODO Error handling
+        if (!m.matches()) { 
+        	setResult(RESULT_CANCELED);  // TODO Error handling
+        	return;
+        }
 
         String userNickName = IMReady.getNickName(this);
         final String userName = IMReady.getUserName(this);
-        
+
         api = new ServerAPI(userName);
         meetingId = Integer.parseInt(m.group(1));
         meetingName = Uri.decode(m.group(2));
 
-        adapter = new SimpleAdapter(this, participants, R.layout.meeting_participant_list_item, from, to);
+        Intent i = new Intent();
+    	i.putExtra(IMReady.RETURNS_MEETING_ID, meetingId);
+    	setResult(RESULT_OK, i);
+
+    	adapter = new SimpleAdapter(this, participants, R.layout.meeting_participant_list_item, from, to);
         initialiseActivityFromLocalKnowledge(meetingName, meetingId);
         ServerAPI.performInBackground(new RefreshMeetingDetailsAction());
         adapter.setViewBinder(new SimpleAdapter.ViewBinder() {

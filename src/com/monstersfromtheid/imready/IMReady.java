@@ -26,14 +26,14 @@ public class IMReady {
 	public static final String RETURNS_MEETING_ID   = "MeetingID";
 	public static final String RETURNS_MEETING_NAME = "MeetingName";
 	
-	private static final String PREFERENCES_KEYS_ACCOUNT_DEFINED = "accountDefined";
-	private static final String PREFERENCES_KEYS_USERNAME        = "accountUserName";
-	private static final String PREFERENCES_KEYS_NICKNAME        = "accountNickName";
-	private static final String PREFERENCES_KEYS_MEETING_JSON    = "knownMeetingsJSON";
-	private static final String PREFERENCES_KEYS_CHANGES_JSON    = "knownMeetingsForChangesJSON";
-	private static final String PREFERENCES_KEYS_DIRTY_MEETINGS  = "dirtyMeetings";
-	private static final String PREFERENCES_KEYS_POL_INTERVAL    = "pollingInterval";
-	private static final String PREFERENCES_KEYS_NOTIFY_LEVEL    = "notificationLevel";
+	public static final String PREFERENCES_KEYS_ACCOUNT_DEFINED = "accountDefined";
+	public static final String PREFERENCES_KEYS_USERNAME        = "accountUserName";
+	public static final String PREFERENCES_KEYS_NICKNAME        = "accountNickName";
+	public static final String PREFERENCES_KEYS_MEETING_JSON    = "knownMeetingsJSON";
+	public static final String PREFERENCES_KEYS_CHANGES_JSON    = "knownMeetingsForChangesJSON";
+	public static final String PREFERENCES_KEYS_DIRTY_MEETINGS  = "dirtyMeetings";
+	public static final String PREFERENCES_KEYS_POL_INTERVAL    = "pollingInterval";
+	public static final String PREFERENCES_KEYS_NOTIFY_LEVEL    = "notificationLevel";
 
 	public static final boolean isAccountDefined(ContextWrapper c){
 		return c.getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE).getBoolean(PREFERENCES_KEYS_ACCOUNT_DEFINED, false);
@@ -139,6 +139,10 @@ public class IMReady {
         preferences.commit();
 	}
 	
+	public static final void setNextAlarm(Context context){
+		setNextAlarm(context, false);
+	}
+
 	/**
 	 * Set the next alarm.  Use the current time, the polling interval settings and the 
 	 * notification level to work out when to set the alarm for, if at all. 
@@ -146,14 +150,15 @@ public class IMReady {
 	 * If the notification level is zero, then any existing alarm is cancelled.
 	 * 
 	 * @param context
+	 * @param connected - Is an Activity running at the moment? 
 	 */
-	public static final void setNextAlarm(Context context){
+	public static final void setNextAlarm(Context context, boolean connected){
 		AlarmManager alarm = (AlarmManager)context.getSystemService(Context.ALARM_SERVICE);
 	    Intent i = new Intent(context, CheckMeetingsAlarmReceiver.class);
 	    PendingIntent pi = PendingIntent.getBroadcast(context, 0, i, 0);
 
-	    // If notifications are off, always turn off the alarm 
-	    if( getNotificationLevel(new ContextWrapper(context)) == 0 ){
+	    // If we're not connected and notifications are off, always turn off the alarm 
+	    if( !connected && getNotificationLevel(new ContextWrapper(context)) == 0 ){
 	    	alarm.cancel(pi);
 	    	return;
 	    }
@@ -163,28 +168,31 @@ public class IMReady {
 	    // TODO - add the check to see if anything needs to be done.
 
 		long interval;
-		switch ( getPollingInterval(new ContextWrapper(context)) ) {
-		case 0:
-			interval = AlarmManager.INTERVAL_FIFTEEN_MINUTES;
-			break;
+		if(connected) {
+			interval = 20000;
+		} else {
+			switch ( getPollingInterval(new ContextWrapper(context)) ) {
+			case 0:
+				interval = AlarmManager.INTERVAL_FIFTEEN_MINUTES;
+				break;
 
-		case 1:
-			interval = AlarmManager.INTERVAL_HOUR;
-			break;
-			
-		case 2:
-			int currentHour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY);
-			interval = ( 8 < currentHour && currentHour < 23 ) ? AlarmManager.INTERVAL_FIFTEEN_MINUTES : AlarmManager.INTERVAL_HOUR;
-			break;
+			case 1:
+				interval = AlarmManager.INTERVAL_HOUR;
+				break;
 
-		default:
-			interval = AlarmManager.INTERVAL_HOUR;
-			break;
+			case 2:
+				int currentHour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY);
+				interval = ( 8 < currentHour && currentHour < 23 ) ? AlarmManager.INTERVAL_FIFTEEN_MINUTES : AlarmManager.INTERVAL_HOUR;
+				break;
+
+			default:
+				interval = AlarmManager.INTERVAL_HOUR;
+				break;
+			}
 		}
 		
-		
 		alarm.setInexactRepeating(AlarmManager.ELAPSED_REALTIME_WAKEUP,
-				SystemClock.elapsedRealtime()+60000,
+				SystemClock.elapsedRealtime()+1000,
 				interval,
 				pi);
 	
