@@ -127,7 +127,7 @@ public class CheckMeetingsService extends IntentService {
 				List<Meeting> readyMeetings = IMReady.readyMeetings(IMReady.changedMeetings(userAwareMeetings, latestMeetings));
 				int readyM = readyMeetings.size();
 
-				// Get a list of meetings that we already know have changed plus meetings we've just found have changed.
+				// Get a merged list of meetings that we already know have changed plus meetings we've just found have changed.
 				List<Meeting> changedMeetings = IMReady.changedMeetings(lastSeenMeetings, latestMeetings);
 				List<Integer> newDirtyMeetings = IMReady.mergeDirtyMeetingList(IMReady.getDirtyMeetings(this), changedMeetings);
 				IMReady.setDirtyMeetings(newDirtyMeetings, this);

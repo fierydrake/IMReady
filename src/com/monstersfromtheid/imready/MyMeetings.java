@@ -25,9 +25,12 @@ import android.widget.ImageView;
 import android.widget.SimpleAdapter;
 import android.widget.TextView;
 
+import com.monstersfromtheid.imready.MyMeetings.MeetingUpdate.UpdateType;
 import com.monstersfromtheid.imready.client.Meeting;
 import com.monstersfromtheid.imready.client.MessageAPI;
 import com.monstersfromtheid.imready.client.MessageAPIException;
+
+// TODO - IT doesn't remember across restarts, and it doesn't remember across a single update
 
 public class MyMeetings extends ListActivity{
 	public static final int ACTIVITY_CREATE_MEETING = 0;
@@ -73,7 +76,9 @@ public class MyMeetings extends ListActivity{
 					break;
 
 				case R.id.meeting_list_item_decoration:
-					if( ((String)data).equalsIgnoreCase("changed") ) {
+					if( ((String)data).equalsIgnoreCase("created") ) {
+						((ImageView)view).setImageResource(R.drawable.decoration_change);
+					} else if( ((String)data).equalsIgnoreCase("changed") ) {
 						((ImageView)view).setImageResource(R.drawable.decoration_change);
 					} else {
 						((ImageView)view).setImageResource(R.drawable.decoration_none);
@@ -109,19 +114,19 @@ public class MyMeetings extends ListActivity{
 
 	   	// Prime the list with meetings we already know about
 	   	List<Meeting> meetings;
-	   	List<MeetingUpdate> updates = new ArrayList<MeetingUpdate>();
+	   	List<MeetingUpdate> updates = retrieveDecoratedMeetings();
 		try {
-			meetings = MessageAPI.userMeetings(IMReady.getLastSeenMeetingsJSON(this));
-			// TODO Get previously decorated meetings
-			// Create update list from recorded decorated list
+			meetings = MessageAPI.userMeetings(IMReady.getUserAwareMeetingsJSON(this));
 			updateView(meetings, updates);
-			
 		} catch (MessageAPIException e) {
 		}
+		
+		// Then process the new information that the service has.
+		processMeetingsUpdate();
 
 		setListAdapter(adapter);
 	}
-
+	
 	// The CheckMeetingsService broadcasts when it sees a change to it's list of meetings.
 	// NB We need to use a BroadcastReceiver as the UI thread is the only one that can modifying the View. 
 	public class ResponseReceiver extends BroadcastReceiver {
@@ -159,10 +164,10 @@ public class MyMeetings extends ListActivity{
 	}
 
 	// We've been notified of a change, so go get the latest information and handle it
-	public void processMeetingsUpdate() {
+	private void processMeetingsUpdate() {
 		try {
 			List<Meeting> meetings;
-			List<MeetingUpdate> updates;
+			List<MeetingUpdate> markAsDecorated = retrieveDecoratedMeetings();
 			meetings = MessageAPI.userMeetings(IMReady.getLastSeenMeetingsJSON(this));
 
 			{
@@ -171,26 +176,60 @@ public class MyMeetings extends ListActivity{
 				
 				List<Meeting> newMeetings = IMReady.newMeetings(userAwareMeetings, lastSeenMeetings);
 				List<Meeting> changedMeetings = IMReady.changedMeetings(userAwareMeetings, lastSeenMeetings);
-				updates = new ArrayList<MeetingUpdate>(newMeetings.size() + changedMeetings.size());
 				
-				for (Meeting newMeeting : newMeetings) { updates.add(new MeetingUpdate(newMeeting, MeetingUpdate.UpdateType.NEW)); }
-				for (Meeting changedMeeting : changedMeetings) { updates.add(new MeetingUpdate(changedMeeting, MeetingUpdate.UpdateType.CHANGE)); }
-				//IMReady.readyMeetings(meetings); // ? Surely we only want meetings that changed to ready since we last looked?
+				// Take the list of "just tagged as new or changed" and combine with the existing
+				// list of "I've already decorated as new or changed".  The existing list takes precedent.
+				// The rule of higher priority is that we don't remove a decoration until the user's 
+				// looked at it irrespective of what the server thinks.
+				for (Meeting newMeeting : newMeetings) {
+					// if already decorated as new exists, then ignore this.  otherwise, add it.
+					Iterator<MeetingUpdate> iter = markAsDecorated.iterator();
+					boolean alreadyDecorated = false;
+					while(iter.hasNext()){
+						MeetingUpdate m = iter.next();
+						if( newMeeting.getId() == m.getUpdatedMeeting().getId() &&
+						    m.getUpdateType() == UpdateType.NEW ) {
+							alreadyDecorated = true;
+							break;
+						}
+					}
+					if(!alreadyDecorated) {
+						markAsDecorated.add(new MeetingUpdate(newMeeting, MeetingUpdate.UpdateType.NEW));
+					}
+				}
+				for (Meeting changedMeeting : changedMeetings) {
+					// if already decorated as changed exists, then ignore this.  otherwise, add it.
+					Iterator<MeetingUpdate> iter = markAsDecorated.iterator();
+					boolean alreadyDecorated = false;
+					while(iter.hasNext()){
+						MeetingUpdate m = iter.next();
+						if( changedMeeting.getId() == m.getUpdatedMeeting().getId() &&
+						    m.getUpdateType() == UpdateType.CHANGE ) {
+							alreadyDecorated = true;
+							break;
+						}
+					}
+					if(!alreadyDecorated) {
+						markAsDecorated.add(new MeetingUpdate(changedMeeting, MeetingUpdate.UpdateType.CHANGE));
+					}
+				}
 			}
 
-			// Roll up lastSeen in to userAware (and blank the dirty list?)
+			// Roll up lastSeen in to userAware to mark them as known about
 			IMReady.setUserAwareMeetingsJSON(IMReady.getLastSeenMeetingsJSON(this), this);
-			//IMReady.setDirtyMeetings(new ArrayList<Integer>(), this);
+			// Blank the list of dirty meetings as the user is aware of their latest state.
+			IMReady.setDirtyMeetings(new ArrayList<Integer>(), this);
 
 			// Set-up the list model with the meetings and annotations
-			updateView(meetings, updates);
+			updateView(meetings, markAsDecorated);
 		} catch (MessageAPIException e) {
 			// TODO: Handle failure - show error message...?
 		}
 	}
 
 	// Take the meeting list and the update list and display them
-	public void updateView(List<Meeting> meetings, List<MeetingUpdate> updates) {
+	private void updateView(List<Meeting> meetings, List<MeetingUpdate> updates) {
+		// TODO - calling clear meetings means that we forget our decorations!
 		clearMeetings();
 		for (Meeting meeting : meetings) {
 			addMeeting(meeting.getName(), meeting.getId(), meeting.getState() == Meeting.STATE_READY);
@@ -198,6 +237,7 @@ public class MyMeetings extends ListActivity{
 		for (MeetingUpdate update : updates) {
 			decorateMeeting(update.getUpdatedMeeting().getId(), update.getUpdateType());
 		}
+		storeDecoratedMeetings();
 		adapter.notifyDataSetChanged();
 	}
 
@@ -254,6 +294,31 @@ public class MyMeetings extends ListActivity{
 		meetings.add(userItem);
 	}
 
+	private void storeDecoratedMeetings() {
+		Iterator<HashMap<String, Object>> iterMeetings = meetings.iterator();
+		ArrayList<Integer> decoratedMeetings = new ArrayList<Integer>();
+		while(iterMeetings.hasNext()){
+			HashMap<String, Object> meetingItem = iterMeetings.next();
+			if( ((String)meetingItem.get("recently")).equalsIgnoreCase("created") ||
+			    ((String)meetingItem.get("recently")).equalsIgnoreCase("changed") ){
+				decoratedMeetings.add( (Integer)meetingItem.get("id") );
+			}
+		}
+		IMReady.setDecoratedMeetings(decoratedMeetings, this);
+	}
+	
+	private List<MeetingUpdate> retrieveDecoratedMeetings() {
+		List<Integer> decoratedMeetings = IMReady.getDecoratedMeetings(this);
+		List<MeetingUpdate> updates = new ArrayList<MeetingUpdate>();
+		Iterator<Integer> iter = decoratedMeetings.iterator();
+		while(iter.hasNext()){
+			MeetingUpdate m = new MeetingUpdate(new Meeting(iter.next(), "", 0, null), UpdateType.CHANGE);
+			updates.add(m);
+		}
+
+		return updates;
+	}
+
 	private void decorateMeeting(int meetingId, MeetingUpdate.UpdateType type) {
 		Iterator<HashMap<String, Object>> iterMeetings = meetings.iterator();
 		while(iterMeetings.hasNext()){
@@ -274,6 +339,7 @@ public class MyMeetings extends ListActivity{
 				}
 			}
 		}
+		storeDecoratedMeetings();
 	}
 
 	public boolean onCreateOptionsMenu(Menu menu) {

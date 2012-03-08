@@ -25,15 +25,16 @@ public class IMReady {
 	
 	public static final String RETURNS_MEETING_ID   = "MeetingID";
 	public static final String RETURNS_MEETING_NAME = "MeetingName";
-	
-	public static final String PREFERENCES_KEYS_ACCOUNT_DEFINED = "accountDefined";
-	public static final String PREFERENCES_KEYS_USERNAME        = "accountUserName";
-	public static final String PREFERENCES_KEYS_NICKNAME        = "accountNickName";
-	public static final String PREFERENCES_KEYS_MEETING_JSON    = "knownMeetingsJSON";
-	public static final String PREFERENCES_KEYS_CHANGES_JSON    = "knownMeetingsForChangesJSON";
-	public static final String PREFERENCES_KEYS_DIRTY_MEETINGS  = "dirtyMeetings";
-	public static final String PREFERENCES_KEYS_POL_INTERVAL    = "pollingInterval";
-	public static final String PREFERENCES_KEYS_NOTIFY_LEVEL    = "notificationLevel";
+
+	public static final String PREFERENCES_KEYS_ACCOUNT_DEFINED    = "accountDefined";
+	public static final String PREFERENCES_KEYS_USERNAME           = "accountUserName";
+	public static final String PREFERENCES_KEYS_NICKNAME           = "accountNickName";
+	public static final String PREFERENCES_KEYS_MEETING_JSON       = "knownMeetingsJSON";
+	public static final String PREFERENCES_KEYS_CHANGES_JSON       = "knownMeetingsForChangesJSON";
+	public static final String PREFERENCES_KEYS_DIRTY_MEETINGS     = "dirtyMeetings";
+	public static final String PREFERENCES_KEYS_POL_INTERVAL       = "pollingInterval";
+	public static final String PREFERENCES_KEYS_NOTIFY_LEVEL       = "notificationLevel";
+	public static final String PREFERENCES_KEYS_DECORATED_MEETINGS = "decoratedMeetings";
 
 	public static final boolean isAccountDefined(ContextWrapper c){
 		return c.getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE).getBoolean(PREFERENCES_KEYS_ACCOUNT_DEFINED, false);
@@ -110,6 +111,14 @@ public class IMReady {
         preferences.commit();
 	}
 	
+	/**
+	 * Return the list of meetings marked as "dirty".  This is used by the service to maintain a list of the meetings that have
+	 * seen changes since the user was last aware of their full meeting list.  This is effectively a list of meetings that have
+	 * changed.
+	 * 
+	 * @param c
+	 * @return A list of meeting ids.
+	 */
 	public static final List<Integer> getDirtyMeetings(ContextWrapper c){
 		ArrayList<Integer> dirtyMeetings = new ArrayList<Integer>();
 		
@@ -123,9 +132,16 @@ public class IMReady {
 		return dirtyMeetings;
 	}
 	
+	/** 
+	 * Set the list of meetings to be marked as "dirty".  This is used by the service to maintain a list of meetings that have
+	 * seen changes since the user was last aware of their full meeting list.  This is effectively a list of meetings that have
+	 * changed.
+	 * 
+	 * @param dirtyMeetings
+	 * @param c
+	 */
 	public static final void setDirtyMeetings(List<Integer> dirtyMeetings, ContextWrapper c){
 		String s = "";
-		
 		Iterator<Integer> iter = dirtyMeetings.iterator();
 		while(iter.hasNext()){
 			s += ((Integer)iter.next());
@@ -138,7 +154,49 @@ public class IMReady {
         preferences.putString(PREFERENCES_KEYS_DIRTY_MEETINGS, s);
         preferences.commit();
 	}
-	
+
+	/** 
+	 * Return the list of meetings marked as "decorated".  This is used by the Activity to maintain a list of the meetings that have
+	 * been marked in the UI as having changed.  This is effectively a list of meetings that the user is aware have changed, but they
+	 * are not aware what the change is.
+	 * 
+	 * @param c
+	 * @return A list of meeting ids.
+	 */
+	public static final List<Integer> getDecoratedMeetings(ContextWrapper c){
+		ArrayList<Integer> decoratedMeetings = new ArrayList<Integer>();
+		String[] s = c.getSharedPreferences(IMReady.PREFERENCES_NAME, Context.MODE_PRIVATE).getString(PREFERENCES_KEYS_DECORATED_MEETINGS, "").split("-");
+		for (int i = 0; i < s.length; i++) {
+			if( s[i].length() > 0 ){
+				decoratedMeetings.add( new Integer( s[i] ) );
+			}
+		}
+		return decoratedMeetings;
+	}
+
+	/**
+	 * Set the list of meetings to be marked as "decorated".  This is used by the Activity to maintain a list of the meetings that have
+	 * been marked in the UI as having changed.  This is effectively a list of meetings that the user is aware have changed, but they
+	 * are not aware what the change is.
+	 * 
+	 * @param decoratedMeetingsIds
+	 * @param c
+	 */
+	public static final void setDecoratedMeetings(List<Integer> decoratedMeetingsIds, ContextWrapper c){
+		String s = "";
+		Iterator<Integer> iter = decoratedMeetingsIds.iterator();
+		while(iter.hasNext()){
+			s += ((Integer)iter.next());
+			if(iter.hasNext()) {
+				s += "-";
+			}
+		}
+
+		SharedPreferences.Editor preferences = c.getSharedPreferences(IMReady.PREFERENCES_NAME, Context.MODE_PRIVATE).edit();
+        preferences.putString(PREFERENCES_KEYS_DECORATED_MEETINGS, s);
+        preferences.commit();
+	}
+
 	public static final void setNextAlarm(Context context){
 		setNextAlarm(context, false);
 	}
@@ -173,7 +231,8 @@ public class IMReady {
 		} else {
 			switch ( getPollingInterval(new ContextWrapper(context)) ) {
 			case 0:
-				interval = AlarmManager.INTERVAL_FIFTEEN_MINUTES;
+				//interval = AlarmManager.INTERVAL_FIFTEEN_MINUTES;
+				interval = 10000;
 				break;
 
 			case 1:
