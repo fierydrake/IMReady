@@ -37,7 +37,7 @@ public class ServerAPI {
 					public void run() { success(result); }
 				});
 			} catch (final ServerAPICallFailedException e) {
-				e.printStackTrace();
+				//e.printStackTrace();
 				handler.post(new Runnable() {
 					public void run() { failure(e); }
 				});
@@ -51,7 +51,7 @@ public class ServerAPI {
 		new Thread(action).start();
 	}
 	
-	private static final String SERVER_URI = "http://imready.monstersfromtheid.co.uk:54321/"; 
+	
 	
 	private String requestingUserId;
 	
@@ -61,10 +61,18 @@ public class ServerAPI {
 	public String getRequestingUserId() { return requestingUserId; }
 	
 	// GET
-	public void user(String id) throws ServerAPICallFailedException {
+
+	/**
+	 * Check to see if the userID exists in the server.
+	 * 
+	 * @param userId - ID of the user to retrieve
+	 * @return
+	 * @throws ServerAPICallFailedException
+	 */
+	public void user(String userId) throws ServerAPICallFailedException {
     	final AndroidHttpClient http = AndroidHttpClient.newInstance(IMReady.CLIENT_HTTP_NAME);
 		try {
-			URI uri = new URI(SERVER_URI).resolve("user/" + id);
+			URI uri = new URI(IMReady.SERVER_URI).resolve("user/" + userId);
 	    	HttpGet getRequest = new HttpGet(uri);
 	    	getRequest.addHeader("X-IMReady-Auth-ID", getRequestingUserId());
 	    	HttpResponse response = http.execute(getRequest);
@@ -72,7 +80,7 @@ public class ServerAPI {
 	    	int status = response.getStatusLine().getStatusCode();
 	    	switch (status) {
 	    	case 200: return; // OK
-	    	case 404: throw new ServerAPICallFailedException("User id '" + id + "' not found");
+	    	case 404: throw new ServerAPICallFailedException("User id '" + userId + "' not found");
 	    	case 500: throw new ServerAPICallFailedException("Internal error on server");
 	    	default: throw new ServerAPICallFailedException("Server returned unknown error: " + status);
 	    	}
@@ -86,11 +94,18 @@ public class ServerAPI {
 			http.close();
 		}				
 	}
-	
-	public String meeting(int id) throws ServerAPICallFailedException {
+
+	/**
+	 * Retrieve the details from the server of the meeting with id meetingId.
+	 * 
+	 * @param meetingId - ID of the meeting to retrieve
+	 * @return - JSONObject of the meeting
+	 * @throws ServerAPICallFailedException
+	 */
+	public Meeting meeting(int meetingId) throws ServerAPICallFailedException {
 	    final AndroidHttpClient http = AndroidHttpClient.newInstance(IMReady.CLIENT_HTTP_NAME);
 	    try {
-	        URI uri = new URI(SERVER_URI).resolve("meeting/" + id);
+	        URI uri = new URI(IMReady.SERVER_URI).resolve("meeting/" + meetingId);
 	        HttpGet getRequest = new HttpGet(uri);
 	        getRequest.addHeader("X-IMReady-Auth-ID", getRequestingUserId());
 	        HttpResponse response = http.execute(getRequest);
@@ -100,10 +115,45 @@ public class ServerAPI {
 	        case 200: // OK
 	            String body = new BufferedReader(new InputStreamReader(response.getEntity().getContent()), 2048).readLine();
 	            try {
-	            	// TODO - check return is valid JSON?
-
-	            	JSONObject meetingJSON = (JSONObject)new JSONTokener(body).nextValue();
-	                return body;
+	            	JSONObject meetingJSON = new JSONObject(body);
+	            	ArrayList<Participant> participants = new ArrayList<Participant>();
+	    	    	JSONArray participantsJSON = meetingJSON.getJSONArray("participants");
+	    	    	for (int i=0; i<participantsJSON.length(); i++) {
+	    	    		JSONObject participantJSON = participantsJSON.getJSONObject(i);
+	    	    		participants.add(
+	    	    				new Participant(
+	    	    						new User(participantJSON.getString("id"), participantJSON.getString("defaultNickname")),
+	    	                            participantJSON.getInt("state"),
+	    	                            participantJSON.getBoolean("notified")
+	    	                        )
+	    	                    );
+	    	        }
+	    	    	boolean decorated = false;
+	    	    	try {
+	    	    		decorated = meetingJSON.getBoolean("notified");
+	    	    	} catch (JSONException e) {
+	    	    		// Assume decorated is false
+	    	    	}
+	    	    	boolean newToUser = false;
+	    	    	try {
+	    	    		newToUser = meetingJSON.getBoolean("newToUser");
+	    	    	} catch (JSONException e) {
+	    	    		// Assume newToUser is false
+	    	    	}
+	    	    	boolean changedToUser = false;
+	    	    	try {
+	    	    		changedToUser = meetingJSON.getBoolean("changedToUser");
+	    	    	} catch (JSONException e) {
+	    	    		// Assume changedToUser is false
+	    	    	}
+	    	    	
+	    	    	return new Meeting(meetingJSON.getInt("id"), 
+	    	    			meetingJSON.getString("name"), 
+	    	    			meetingJSON.getInt("state"), 
+	    	    			participants, 
+	    	    			decorated, 
+	    	    			newToUser, 
+	    	    			changedToUser);
 	            } catch (IllegalArgumentException e) {
 	                e.printStackTrace();
 	                throw new ServerAPICallFailedException("Server response invalid: " + e, e);
@@ -111,7 +161,7 @@ public class ServerAPI {
 	                e.printStackTrace();
 	                throw new ServerAPICallFailedException("Server response invalid: " + e, e);
 	            }
-	        case 404: throw new ServerAPICallFailedException("Meeting with id '" + id + "' not found");
+	        case 404: throw new ServerAPICallFailedException("Meeting with id '" + meetingId + "' not found");
 	        case 500: throw new ServerAPICallFailedException("Internal error on server");
 	        default: throw new ServerAPICallFailedException("Server returned unknown error: " + status);
 	        }
@@ -126,10 +176,17 @@ public class ServerAPI {
 	    }
 	}
 
-	public String userMeetings(String userId) throws ServerAPICallFailedException {
+	/**
+	 * Return the meetings that user userID is a part of.
+	 * 
+	 * @param userId - ID of the user to retrieve the meetings of
+	 * @return - JSONArray of the meetings for a given user
+	 * @throws ServerAPICallFailedException
+	 */
+	public JSONArray userMeetings(String userId) throws ServerAPICallFailedException {
 	    final AndroidHttpClient http = AndroidHttpClient.newInstance(IMReady.CLIENT_HTTP_NAME);
 	    try {
-	        URI uri = new URI(SERVER_URI).resolve("meetings/" + userId);
+	        URI uri = new URI(IMReady.SERVER_URI).resolve("meetings/" + userId);
 	        HttpGet getRequest = new HttpGet(uri);
 	        getRequest.addHeader("X-IMReady-Auth-ID", getRequestingUserId());
 	        HttpResponse response = http.execute(getRequest);
@@ -139,10 +196,7 @@ public class ServerAPI {
 	        case 200: // OK
 	            String body = new BufferedReader(new InputStreamReader(response.getEntity().getContent()), 2048).readLine();
 	            try {
-	            	// TODO - check return is valid JSON?
-
-	            	JSONArray meetingsJSON = (JSONArray)new JSONTokener(body).nextValue();
-	            	return body;
+	    			return new JSONArray(body);
 	            } catch (IllegalArgumentException e) {
 	                e.printStackTrace();
 	                throw new ServerAPICallFailedException("Server response invalid: " + e, e);
@@ -164,29 +218,33 @@ public class ServerAPI {
 	        http.close();
 	    }
 	}
-	
-//	public List<Participant> meetingParticipants(int meetingId) throws APICallFailedException { 
-//		return null; 
-//	}
-	
+
 	// POST
-	public void createUser(String id, String defaultNickname) throws ServerAPICallFailedException {
+
+	/**
+	 * Calls the server to create a user with the given userID and nickname.
+	 * 
+	 * @param userId - the userID of the user to create
+	 * @param defaultNickname - the nickname to give a user
+	 * @throws ServerAPICallFailedException
+	 */
+	public void createUser(String userId, String defaultNickname) throws ServerAPICallFailedException {
     	final AndroidHttpClient http = AndroidHttpClient.newInstance(IMReady.CLIENT_HTTP_NAME);
 		try {
-			URI uri = new URI(SERVER_URI).resolve("users");
+			URI uri = new URI(IMReady.SERVER_URI).resolve("users");
 	    	HttpPost postRequest = new HttpPost(uri);
 	    	postRequest.addHeader("X-IMReady-Auth-ID", getRequestingUserId());
 	    	List<NameValuePair> nameValuePairs = new ArrayList<NameValuePair>(2);
-			nameValuePairs.add(new BasicNameValuePair("id", id));
+			nameValuePairs.add(new BasicNameValuePair("id", userId));
 			nameValuePairs.add(new BasicNameValuePair("defaultNickname", defaultNickname));
 			postRequest.setEntity(new UrlEncodedFormEntity(nameValuePairs));
 	    	HttpResponse response = http.execute(postRequest);
 
 	    	int status = response.getStatusLine().getStatusCode();
-	    	String msg = response.getEntity().toString(); // FIXME
+	    	String msg = response.getEntity().toString(); // FIXME - not sure why this comment is here.
 	    	switch (status) {
 	    	case 200: return; // OK
-	    	case 400: throw new ServerAPICallFailedException(msg + " '" + id + "'");
+	    	case 400: throw new ServerAPICallFailedException(msg + " '" + userId + "'");
 	    	case 500: throw new ServerAPICallFailedException("Internal error on server");
 	    	default: throw new ServerAPICallFailedException("Server returned unknown error: " + status);
 	    	}
@@ -201,12 +259,20 @@ public class ServerAPI {
 		}		
 	}
 	
+	/**
+	 * Calls the server to create a meeting with the given name.
+	 * 
+	 * @param creatorId - The userID of the user creating the meeting.  They will be put as the first participant.
+	 * @param name - The name for the meeting
+	 * @return - the ID of the meeting that was created
+	 * @throws ServerAPICallFailedException
+	 */
 	public int createMeeting(String creatorId, String name) throws ServerAPICallFailedException {
     	final AndroidHttpClient http = AndroidHttpClient.newInstance(IMReady.CLIENT_HTTP_NAME);
     	String body = null;
     	String id = null;
 		try {
-			URI uri = new URI(SERVER_URI).resolve("meetings");
+			URI uri = new URI(IMReady.SERVER_URI).resolve("meetings");
 	    	HttpPost postRequest = new HttpPost(uri);
 	    	postRequest.addHeader("X-IMReady-Auth-ID", getRequestingUserId());
 	    	
@@ -244,10 +310,18 @@ public class ServerAPI {
 	}
 	
 	// POST
+
+	/**
+	 * Calls the server to add a user to the given meeting.
+	 * 
+	 * @param meetingId - The ID of the meeting to add a user to
+	 * @param userId - The ID of the user to add
+	 * @throws ServerAPICallFailedException
+	 */
 	public void addMeetingParticipant(int meetingId, String userId) throws ServerAPICallFailedException {
     	final AndroidHttpClient http = AndroidHttpClient.newInstance(IMReady.CLIENT_HTTP_NAME);
 		try {
-			URI uri = new URI(SERVER_URI).resolve("meeting/" + meetingId + "/participants");
+			URI uri = new URI(IMReady.SERVER_URI).resolve("meeting/" + meetingId + "/participants");
 	    	HttpPost postRequest = new HttpPost(uri);
 	    	postRequest.addHeader("X-IMReady-Auth-ID", getRequestingUserId());
 	    	
@@ -275,10 +349,18 @@ public class ServerAPI {
 	}
 
 	// PUT
+	
+	/**
+	 * Set the status of the given user in the given meeting to "ready"
+	 * 
+	 * @param meetingId - The ID of the meeting to change
+	 * @param userId - The ID of the user to change
+	 * @throws ServerAPICallFailedException
+	 */
 	public void ready(int meetingId, String userId) throws ServerAPICallFailedException {
 		final AndroidHttpClient http = AndroidHttpClient.newInstance(IMReady.CLIENT_HTTP_NAME);
 		try {
-			URI uri = new URI(SERVER_URI).resolve("meeting/" + meetingId + "/participant/" + userId);
+			URI uri = new URI(IMReady.SERVER_URI).resolve("meeting/" + meetingId + "/participant/" + userId);
 	    	HttpPut putRequest = new HttpPut(uri);
 	    	putRequest.addHeader("X-IMReady-Auth-ID", getRequestingUserId());
 	    	
@@ -307,10 +389,18 @@ public class ServerAPI {
 	}
 	
 	// DELETE
+
+	/**
+	 * Remove the given user from the given meeting
+	 * 
+	 * @param meetingId - The ID of the meeting to change
+	 * @param userId - The ID of the user to remove
+	 * @throws ServerAPICallFailedException
+	 */
 	public void removeMeetingParticipant(int meetingId, String userId) throws ServerAPICallFailedException {
     	final AndroidHttpClient http = AndroidHttpClient.newInstance(IMReady.CLIENT_HTTP_NAME);
 		try {
-			URI uri = new URI(SERVER_URI).resolve("meeting/" + meetingId + "/participant/" + userId);
+			URI uri = new URI(IMReady.SERVER_URI).resolve("meeting/" + meetingId + "/participant/" + userId);
 	    	HttpDelete deleteRequest = new HttpDelete(uri);
 	    	deleteRequest.addHeader("X-IMReady-Auth-ID", getRequestingUserId());
 	    	

@@ -9,6 +9,7 @@
         android:layout_height="wrap_content"
         android:layout_marginRight="5dp"
         android:layout_gravity="top"
+        android:contentDescription=" "
         android:src="@drawable/decoration_none">
     </ImageView>
 

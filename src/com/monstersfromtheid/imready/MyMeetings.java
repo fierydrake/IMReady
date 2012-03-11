@@ -2,8 +2,6 @@ package com.monstersfromtheid.imready;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
 
 import android.app.ListActivity;
 import android.content.BroadcastReceiver;
@@ -25,19 +23,21 @@ import android.widget.ImageView;
 import android.widget.SimpleAdapter;
 import android.widget.TextView;
 
-import com.monstersfromtheid.imready.MyMeetings.MeetingUpdate.UpdateType;
 import com.monstersfromtheid.imready.client.Meeting;
-import com.monstersfromtheid.imready.client.MessageAPI;
-import com.monstersfromtheid.imready.client.MessageAPIException;
+import com.monstersfromtheid.imready.client.Participant;
+import com.monstersfromtheid.imready.client.User;
 
-// TODO - IT doesn't remember across restarts, and it doesn't remember across a single update
+// TODO - Need to clear notifications on any action?  It tells me there is a change, i follow the change in the app, notification remains.
+// TODO - notification on ready meetings?  Why?  We can't get rid of it.
+// TODO - Meeting going ready from me gives a notification with 1 ready.
+// TODO - I set myself to ready and I get a notification.
 
 public class MyMeetings extends ListActivity{
 	public static final int ACTIVITY_CREATE_MEETING = 0;
 	public static final int ACTIVITY_VIEW_MEETING   = 1;
 
 	private ArrayList<HashMap<String, Object>> meetings = new ArrayList<HashMap<String, Object>>();
-	private String[] from = new String[] { "name", "readiness", "recently" };
+	private String[] from = new String[] { "name", "readiness", "decorated" };
 	private int[] to = new int[] { R.id.meeting_list_item_name,  
 			R.id.meeting_list_item_readiness,
 			R.id.meeting_list_item_decoration};
@@ -45,27 +45,10 @@ public class MyMeetings extends ListActivity{
 	private Button createMeetingButton;
 	private ResponseReceiver receiver;
 
-	public static class MeetingUpdate {
-		public enum UpdateType { NEW, CHANGE, VIEWED };
-
-		private Meeting updatedMeeting;
-		private UpdateType updateType;
-
-		public MeetingUpdate(Meeting updatedMeeting, UpdateType updateType) {
-			this.updatedMeeting = updatedMeeting;
-			this.updateType = updateType;
-		}
-
-		public UpdateType getUpdateType() { return updateType; }
-		public Meeting getUpdatedMeeting() { return updatedMeeting; }
-	}
-
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		
-		// Initialize the elements that will be used by the activity
-
-		// Define an adapter to convert from a dataset to a list
+		// Define an adapter to convert from our meetings data set to a list
 		adapter = new SimpleAdapter(this, meetings, R.layout.meeting_list_item, from, to);
 		adapter.setViewBinder(new SimpleAdapter.ViewBinder() {
 			public boolean setViewValue(View view, Object data, String textRepresentation) {
@@ -76,9 +59,7 @@ public class MyMeetings extends ListActivity{
 					break;
 
 				case R.id.meeting_list_item_decoration:
-					if( ((String)data).equalsIgnoreCase("created") ) {
-						((ImageView)view).setImageResource(R.drawable.decoration_change);
-					} else if( ((String)data).equalsIgnoreCase("changed") ) {
+					if ((Boolean)data) {
 						((ImageView)view).setImageResource(R.drawable.decoration_change);
 					} else {
 						((ImageView)view).setImageResource(R.drawable.decoration_none);
@@ -112,17 +93,8 @@ public class MyMeetings extends ListActivity{
 		});
 	   	getListView().addFooterView(createMeetingButton);
 
-	   	// Prime the list with meetings we already know about
-	   	List<Meeting> meetings;
-	   	List<MeetingUpdate> updates = retrieveDecoratedMeetings();
-		try {
-			meetings = MessageAPI.userMeetings(IMReady.getUserAwareMeetingsJSON(this));
-			updateView(meetings, updates);
-		} catch (MessageAPIException e) {
-		}
-		
-		// Then process the new information that the service has.
-		processMeetingsUpdate();
+		// Populate the list with the latest we have recorded.
+		processMeetingsChange();
 
 		setListAdapter(adapter);
 	}
@@ -133,10 +105,11 @@ public class MyMeetings extends ListActivity{
 		public static final String ACTION_RESP = "com.monstersfromtheid.imready.MEETING_CHANGES";
 
 		public void onReceive(Context context, Intent intent) {
-			processMeetingsUpdate();
+			processMeetingsChange();
 		}
 	}
 
+	@Override
 	public void onStart() {
 		super.onStart();
 
@@ -147,15 +120,15 @@ public class MyMeetings extends ListActivity{
 		registerReceiver(receiver, filter);
 
 		// Sort alarm as quick
+		// QUESTION - Should we use a ScheduledThreadPoolExecutor to periodically call the mother-ship?
 		IMReady.setNextAlarm(this, true);
-		// Use a ScheduledThreadPoolExecutor to periodically call the mother-ship?
 	}
 
+	@Override
 	public void onStop() {
 		super.onStop();
 
 		// Cancel whatever ScheduledThreadPoolExecutor we were using?
-
 		// Sort alarm as slow
 		IMReady.setNextAlarm(this);
 
@@ -164,80 +137,12 @@ public class MyMeetings extends ListActivity{
 	}
 
 	// We've been notified of a change, so go get the latest information and handle it
-	private void processMeetingsUpdate() {
-		try {
-			List<Meeting> meetings;
-			List<MeetingUpdate> markAsDecorated = retrieveDecoratedMeetings();
-			meetings = MessageAPI.userMeetings(IMReady.getLastSeenMeetingsJSON(this));
-
-			{
-				List<Meeting> userAwareMeetings = MessageAPI.userMeetings(IMReady.getUserAwareMeetingsJSON(this));
-				List<Meeting> lastSeenMeetings = MessageAPI.userMeetings(IMReady.getLastSeenMeetingsJSON(this));
-				
-				List<Meeting> newMeetings = IMReady.newMeetings(userAwareMeetings, lastSeenMeetings);
-				List<Meeting> changedMeetings = IMReady.changedMeetings(userAwareMeetings, lastSeenMeetings);
-				
-				// Take the list of "just tagged as new or changed" and combine with the existing
-				// list of "I've already decorated as new or changed".  The existing list takes precedent.
-				// The rule of higher priority is that we don't remove a decoration until the user's 
-				// looked at it irrespective of what the server thinks.
-				for (Meeting newMeeting : newMeetings) {
-					// if already decorated as new exists, then ignore this.  otherwise, add it.
-					Iterator<MeetingUpdate> iter = markAsDecorated.iterator();
-					boolean alreadyDecorated = false;
-					while(iter.hasNext()){
-						MeetingUpdate m = iter.next();
-						if( newMeeting.getId() == m.getUpdatedMeeting().getId() &&
-						    m.getUpdateType() == UpdateType.NEW ) {
-							alreadyDecorated = true;
-							break;
-						}
-					}
-					if(!alreadyDecorated) {
-						markAsDecorated.add(new MeetingUpdate(newMeeting, MeetingUpdate.UpdateType.NEW));
-					}
-				}
-				for (Meeting changedMeeting : changedMeetings) {
-					// if already decorated as changed exists, then ignore this.  otherwise, add it.
-					Iterator<MeetingUpdate> iter = markAsDecorated.iterator();
-					boolean alreadyDecorated = false;
-					while(iter.hasNext()){
-						MeetingUpdate m = iter.next();
-						if( changedMeeting.getId() == m.getUpdatedMeeting().getId() &&
-						    m.getUpdateType() == UpdateType.CHANGE ) {
-							alreadyDecorated = true;
-							break;
-						}
-					}
-					if(!alreadyDecorated) {
-						markAsDecorated.add(new MeetingUpdate(changedMeeting, MeetingUpdate.UpdateType.CHANGE));
-					}
-				}
-			}
-
-			// Roll up lastSeen in to userAware to mark them as known about
-			IMReady.setUserAwareMeetingsJSON(IMReady.getLastSeenMeetingsJSON(this), this);
-			// Blank the list of dirty meetings as the user is aware of their latest state.
-			IMReady.setDirtyMeetings(new ArrayList<Integer>(), this);
-
-			// Set-up the list model with the meetings and annotations
-			updateView(meetings, markAsDecorated);
-		} catch (MessageAPIException e) {
-			// TODO: Handle failure - show error message...?
-		}
-	}
-
-	// Take the meeting list and the update list and display them
-	private void updateView(List<Meeting> meetings, List<MeetingUpdate> updates) {
-		// TODO - calling clear meetings means that we forget our decorations!
+	private void processMeetingsChange() {
 		clearMeetings();
-		for (Meeting meeting : meetings) {
-			addMeeting(meeting.getName(), meeting.getId(), meeting.getState() == Meeting.STATE_READY);
+		
+		for (Meeting newMeeting : IMReady.getMeetingState(this)) {
+			addMeeting(newMeeting);
 		}
-		for (MeetingUpdate update : updates) {
-			decorateMeeting(update.getUpdatedMeeting().getId(), update.getUpdateType());
-		}
-		storeDecoratedMeetings();
 		adapter.notifyDataSetChanged();
 	}
 
@@ -245,34 +150,36 @@ public class MyMeetings extends ListActivity{
 		
 		switch (requestCode) {
 		case ACTIVITY_CREATE_MEETING:
-			
-//			  TODO: Replace with appropriate code
-//			String userName = IMReady.getUserName(this);
-//			
-//			final ServerAPI api = new ServerAPI(userName);
-//			ServerAPI.performInBackground(new RefreshMeetingsAction(api));
-
-			//addMeeting();
 
 			if(resultCode == RESULT_OK) {
 				int meetingId = data.getIntExtra(IMReady.RETURNS_MEETING_ID, -1);
-				if (meetingId == -1){
+				if ( meetingId == -1){
 					return;
 				}
-				String name = data.getStringExtra(IMReady.RETURNS_MEETING_NAME);
-				Uri internalMeetingUri = Uri.parse("content://com.monstersfromtheid.imready/meeting/" + meetingId + "/" + Uri.encode(name)); // TODO hackish
+
+				String meetingName = data.getStringExtra(IMReady.RETURNS_MEETING_NAME);
+				Participant p = new Participant(new User(IMReady.getUserName(this), IMReady.getNickName(this)), 0, true);
+				ArrayList<Participant> pList = new ArrayList<Participant>();
+				pList.add(p);
+				Meeting meeting = new Meeting(meetingId, 
+						meetingName, 
+						0,
+						pList, 
+						false, 
+						false, 
+						false);
+				IMReady.addLocallyCreatedMeeting(meeting, this);
+				processMeetingsChange();
+
+				Uri internalMeetingUri = Uri.parse("content://com.monstersfromtheid.imready/meeting/" + meetingId + "/" + Uri.encode(meetingName));
 				startActivity( new Intent(Intent.ACTION_VIEW, internalMeetingUri, MyMeetings.this, ViewMeeting.class) );
 			}
 			break;
 			
 		case ACTIVITY_VIEW_MEETING:
 			if(resultCode == RESULT_OK) {
-				try{
-					decorateMeeting(data.getIntExtra(IMReady.RETURNS_MEETING_ID, 0),MeetingUpdate.UpdateType.VIEWED);
-					adapter.notifyDataSetChanged();
-				} catch (IndexOutOfBoundsException e) {
-					// Meeting view returned something odd - do nothing
-				}
+				IMReady.markMeetingAsDecorated(data.getIntExtra(IMReady.RETURNS_MEETING_ID, 0), false, this);
+				processMeetingsChange();
 			}
 
 		default:
@@ -285,61 +192,19 @@ public class MyMeetings extends ListActivity{
 		meetings.clear();
 	}
 
-	private void addMeeting(String name, int meetingId, boolean readiness) {
+	private void addMeeting(Meeting meeting) {
 		HashMap<String, Object> userItem = new HashMap<String, Object>();
-		userItem.put("id", meetingId);
-		userItem.put("name", name);
-		userItem.put("readiness", readiness);
-		userItem.put("recently", "none");
+		userItem.put("id", meeting.getId());
+		userItem.put("name", meeting.getName());
+		userItem.put("readiness", (meeting.getState() == 1 ));
+		userItem.put("decorated", meeting.isDecorated());
 		meetings.add(userItem);
-	}
-
-	private void storeDecoratedMeetings() {
-		Iterator<HashMap<String, Object>> iterMeetings = meetings.iterator();
-		ArrayList<Integer> decoratedMeetings = new ArrayList<Integer>();
-		while(iterMeetings.hasNext()){
-			HashMap<String, Object> meetingItem = iterMeetings.next();
-			if( ((String)meetingItem.get("recently")).equalsIgnoreCase("created") ||
-			    ((String)meetingItem.get("recently")).equalsIgnoreCase("changed") ){
-				decoratedMeetings.add( (Integer)meetingItem.get("id") );
-			}
+		if(meeting.isNewToUser()){
+			IMReady.markMeetingAsNewToUser(meeting.getId(), false, this);
 		}
-		IMReady.setDecoratedMeetings(decoratedMeetings, this);
-	}
-	
-	private List<MeetingUpdate> retrieveDecoratedMeetings() {
-		List<Integer> decoratedMeetings = IMReady.getDecoratedMeetings(this);
-		List<MeetingUpdate> updates = new ArrayList<MeetingUpdate>();
-		Iterator<Integer> iter = decoratedMeetings.iterator();
-		while(iter.hasNext()){
-			MeetingUpdate m = new MeetingUpdate(new Meeting(iter.next(), "", 0, null), UpdateType.CHANGE);
-			updates.add(m);
+		if(meeting.isChangedToUser()){
+			IMReady.markMeetingAsChangedToUser(meeting.getId(), false, this);
 		}
-
-		return updates;
-	}
-
-	private void decorateMeeting(int meetingId, MeetingUpdate.UpdateType type) {
-		Iterator<HashMap<String, Object>> iterMeetings = meetings.iterator();
-		while(iterMeetings.hasNext()){
-			HashMap<String, Object> meetingItem = iterMeetings.next();
-			if( (Integer)meetingItem.get("id") == meetingId ){
-				switch (type) {
-				case NEW:
-					meetingItem.put("recently", "created");
-					break;
-				case CHANGE:
-					meetingItem.put("recently", "changed");
-					break;
-				case VIEWED:
-					meetingItem.put("recently", "none");
-					break;
-				default:
-					// Do nothing
-				}
-			}
-		}
-		storeDecoratedMeetings();
 	}
 
 	public boolean onCreateOptionsMenu(Menu menu) {

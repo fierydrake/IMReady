@@ -75,7 +75,7 @@ public class AddParticipant extends Activity {
             }
             @Override
             public void success(Void _) {
-                Toast.makeText(AddParticipant.this, "Added '" + userId + "' to meeting with id " + meetingId, Toast.LENGTH_SHORT).show();
+                //Toast.makeText(AddParticipant.this, "Added '" + userId + "' to meeting with id " + meetingId, Toast.LENGTH_SHORT).show();
                 finish();
             }
             @Override

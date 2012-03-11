@@ -56,7 +56,7 @@ public class CreateMeeting extends Activity {
             }
             @Override
             public void success(Integer meetingId) {
-                Toast.makeText(CreateMeeting.this, "Your meeting '"+name+"' was created with id " + meetingId, Toast.LENGTH_SHORT).show();
+                //Toast.makeText(CreateMeeting.this, "Your meeting '"+name+"' was created with id " + meetingId, Toast.LENGTH_SHORT).show();
 
                 final Intent i = new Intent();
                 i.putExtra(IMReady.RETURNS_MEETING_ID, meetingId);

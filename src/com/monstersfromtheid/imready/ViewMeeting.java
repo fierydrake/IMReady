@@ -20,12 +20,11 @@ import android.widget.SimpleAdapter;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.monstersfromtheid.imready.client.ServerAPI;
-import com.monstersfromtheid.imready.client.ServerAPI.Action;
-import com.monstersfromtheid.imready.client.MessageAPI;
-import com.monstersfromtheid.imready.client.ServerAPICallFailedException;
 import com.monstersfromtheid.imready.client.Meeting;
 import com.monstersfromtheid.imready.client.Participant;
+import com.monstersfromtheid.imready.client.ServerAPI;
+import com.monstersfromtheid.imready.client.ServerAPI.Action;
+import com.monstersfromtheid.imready.client.ServerAPICallFailedException;
 
 public class ViewMeeting extends ListActivity {
 	public static final int ACTIVITY_ADD_PARTICIPANT = 1;
@@ -44,7 +43,8 @@ public class ViewMeeting extends ListActivity {
     private class RefreshMeetingDetailsAction extends Action<Meeting> {
         @Override
         public Meeting action() throws ServerAPICallFailedException {
-            return MessageAPI.meeting( api.meeting(meetingId) );
+        	
+            return api.meeting(meetingId);
         }
         @Override
         public void success(Meeting meeting) {
@@ -157,6 +157,7 @@ public class ViewMeeting extends ListActivity {
     }
     
 	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+		// TOD if it worked then update the local model
         ServerAPI.performInBackground(new RefreshMeetingDetailsAction());
     }
 
