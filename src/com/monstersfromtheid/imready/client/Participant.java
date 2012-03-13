@@ -37,6 +37,8 @@ public class Participant {
     	
     	return participantObject;
     }
+    
+    public void setState(int i) { this.state = i; }
 
     public User getUser() { return user; }
     public int getState() { return state; }

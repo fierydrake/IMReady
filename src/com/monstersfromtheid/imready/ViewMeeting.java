@@ -2,11 +2,15 @@ package com.monstersfromtheid.imready;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import android.app.ListActivity;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
@@ -25,6 +29,7 @@ import com.monstersfromtheid.imready.client.Participant;
 import com.monstersfromtheid.imready.client.ServerAPI;
 import com.monstersfromtheid.imready.client.ServerAPI.Action;
 import com.monstersfromtheid.imready.client.ServerAPICallFailedException;
+import com.monstersfromtheid.imready.client.User;
 
 public class ViewMeeting extends ListActivity {
 	public static final int ACTIVITY_ADD_PARTICIPANT = 1;
@@ -33,49 +38,22 @@ public class ViewMeeting extends ListActivity {
     private int[] to = new int[] { R.id.meeting_participant_list_item_name,  
             R.id.meeting_participant_list_item_readiness };
     private SimpleAdapter adapter;
+    private ResponseReceiver receiver;
     
     private ServerAPI api;
     private int meetingId;
     private String meetingName;
+    String userID;
     private boolean myStatus = false;
     View setReadiness;
-
-    private class RefreshMeetingDetailsAction extends Action<Meeting> {
-        @Override
-        public Meeting action() throws ServerAPICallFailedException {
-        	
-            return api.meeting(meetingId);
-        }
-        @Override
-        public void success(Meeting meeting) {
-            updateMeetingInfo(meeting.getName(), meeting.getId());
-            clearParticipants();
-            for (Participant participant : meeting.getParticipants()) {
-            	if( ! api.getRequestingUserId().equalsIgnoreCase(participant.getUser().getId()) ) {
-            		addParticipant(
-            				participant.getUser().getDefaultNickname(), 
-            				participant.getUser().getId(), 
-            				participant.getState() == Participant.STATE_READY
-                        	);
-            	} else {
-            		setMyStatus(participant.getState() == Participant.STATE_READY);
-            	}
-            }
-            adapter.notifyDataSetChanged();
-        }
-        @Override
-        public void failure(ServerAPICallFailedException e) {
-            Toast.makeText(ViewMeeting.this, "Failed: " + e, Toast.LENGTH_LONG).show();
-        }    	
-    }
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
         setReadiness = getLayoutInflater().inflate(R.layout.view_meeting_set_participant_status_button, null);
 
         Uri internalMeetingUri = getIntent().getData();
-
         if (!"content".equals(internalMeetingUri.getScheme())) { return; } // TODO Error handling
         if (!internalMeetingUri.getEncodedPath().startsWith("/meeting")) { return; } // TODO Error handling
 
@@ -88,19 +66,18 @@ public class ViewMeeting extends ListActivity {
         }
 
         String userNickName = IMReady.getNickName(this);
-        final String userName = IMReady.getUserName(this);
-
-        api = new ServerAPI(userName);
+        userID = IMReady.getUserName(this);
         meetingId = Integer.parseInt(m.group(1));
         meetingName = Uri.decode(m.group(2));
+        api = new ServerAPI(userID);
 
         Intent i = new Intent();
     	i.putExtra(IMReady.RETURNS_MEETING_ID, meetingId);
     	setResult(RESULT_OK, i);
 
+        // Define an adapter to convert from our participants data set to a list
     	adapter = new SimpleAdapter(this, participants, R.layout.meeting_participant_list_item, from, to);
-        initialiseActivityFromLocalKnowledge(meetingName, meetingId);
-        ServerAPI.performInBackground(new RefreshMeetingDetailsAction());
+    	updateMeetingInfo(meetingName, meetingId);
         adapter.setViewBinder(new SimpleAdapter.ViewBinder() {
             public boolean setViewValue(View view, Object data, String textRepresentation) {
                 if (view.getId() == R.id.meeting_participant_list_item_readiness) {
@@ -113,7 +90,7 @@ public class ViewMeeting extends ListActivity {
         });
 
         final TextView userIdText = (TextView) setReadiness.findViewById(R.id.meeting_participant_my_name);
-        userIdText.setText(userNickName + "(" + userName + ")");
+        userIdText.setText(userNickName + "(" + userID + ")");
 		setMyStatus(myStatus);
 
         setReadiness.setOnClickListener(new OnClickListener() {
@@ -127,13 +104,14 @@ public class ViewMeeting extends ListActivity {
 				ServerAPI.performInBackground(new Action<Void>() {
         			@Override
         			public Void action() throws ServerAPICallFailedException {
-        				api.ready(meetingId, userName);
+        				api.ready(meetingId, userID);
         				return null;
         			}
         			@Override
         			public void success(Void result) {
         				/* Set the status colour to green */
         				setMyStatus(true);
+        				IMReady.setMyselfReady(meetingId, userID, ViewMeeting.this);
         			}
         			@Override
         			public void failure(ServerAPICallFailedException e) {
@@ -153,18 +131,102 @@ public class ViewMeeting extends ListActivity {
         });
         getListView().addFooterView(addParticipant);
         
-        setListAdapter(adapter);
+        // Populate the list with the latest we have recorded.
+		processMeetingChange();
+
+		setListAdapter(adapter);
     }
     
-	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-		// TOD if it worked then update the local model
-        ServerAPI.performInBackground(new RefreshMeetingDetailsAction());
-    }
+	// The CheckMeetingsService broadcasts when it sees a change to it's list of meetings.
+	// NB We need to use a BroadcastReceiver as the UI thread is the only one that can modifying the View. 
+	public class ResponseReceiver extends BroadcastReceiver {
+		public static final String ACTION_RESP = "com.monstersfromtheid.imready.PARTICIPANT_CHANGES";
 
-    private void initialiseActivityFromLocalKnowledge(String meetingName, int meetingId) {
-        updateMeetingInfo(meetingName, meetingId);
-        adapter.notifyDataSetChanged();
-    }
+		public void onReceive(Context context, Intent intent) {
+			processMeetingChange();
+		}
+	}
+
+	@Override
+	public void onStart() {
+		super.onStart();
+
+		// Register the broadcast receiver to catch change notifications
+		IntentFilter filter = new IntentFilter(ResponseReceiver.ACTION_RESP);
+		filter.addCategory(Intent.CATEGORY_DEFAULT);
+		receiver = new ResponseReceiver();
+		registerReceiver(receiver, filter);
+
+		// Sort alarm as quick
+		// QUESTION - Should we use a ScheduledThreadPoolExecutor to periodically call the mother-ship?
+		IMReady.setNextAlarm(this, true);
+	}
+
+	@Override
+	public void onStop() {
+		super.onStop();
+
+		// Cancel whatever ScheduledThreadPoolExecutor we were using?
+		// Sort alarm as slow
+		IMReady.setNextAlarm(this);
+
+		unregisterReceiver(receiver);
+		receiver = null;
+	}
+	
+	// We've been notified of a change, so go get the latest information and handle it
+	private void processMeetingChange() {
+		clearParticipants();
+		
+		ArrayList<Meeting> meetingList = IMReady.getMeetingState(this);
+		Iterator<Meeting> iter = meetingList.iterator();
+		Meeting thisMeeting;
+		while(iter.hasNext()){
+			thisMeeting = iter.next();
+			if(thisMeeting.getId() == meetingId){
+				updateMeetingInfo(thisMeeting.getName(), thisMeeting.getId());
+				try {
+					for (Participant newParticipant : thisMeeting.getParticipants() ) {
+						if(newParticipant.getUser().getId().compareTo(userID) != 0){
+							addParticipant(newParticipant);
+						}
+					}
+				} catch (NullPointerException e) {
+					// Problem with the participant list
+				}
+				break;
+			}
+		}
+
+		adapter.notifyDataSetChanged();
+	}
+    
+	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+		
+		switch (requestCode) {
+		case ACTIVITY_ADD_PARTICIPANT:
+			if(resultCode == RESULT_OK) {
+				int meetingId = data.getIntExtra(IMReady.RETURNS_MEETING_ID, -1);
+				if ( meetingId == -1){
+					return;
+				}
+				String userID = data.getStringExtra(IMReady.RETURNS_USER_ID);
+				if ( userID == null ){
+					return;
+				}
+				String userNickName = "...";
+
+				Participant participant = new Participant(new User(userID, userNickName), 0, false);
+				IMReady.addLocallyAddedParticipant(meetingId, participant, this);
+
+				processMeetingChange();
+			}
+			break;
+			
+		default:
+			break;
+		}
+	}
 
     private void updateMeetingInfo(String meetingName, int meetingId) {
         setTitle("Meeting: " + meetingName + " (id=" + meetingId + ")");
@@ -174,11 +236,12 @@ public class ViewMeeting extends ListActivity {
         participants.clear();
     }
 
-    private void addParticipant(String nick, String id, boolean readiness) {
+    private void addParticipant(Participant participant) {
+    	//String nick, String id, boolean readiness
         HashMap<String, Object> userItem = new HashMap<String, Object>();
-        userItem.put("userId", id);
-        userItem.put("name", nick + " (" + id + ")");
-        userItem.put("readiness", readiness);
+        userItem.put("userId", participant.getUser().getId());
+        userItem.put("name", participant.getUser().getDefaultNickname() + " (" + participant.getUser().getId() + ")");
+        userItem.put("readiness", (participant.getState() == 1));
         participants.add(userItem);
     }
     

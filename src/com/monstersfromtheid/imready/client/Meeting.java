@@ -1,8 +1,7 @@
 package com.monstersfromtheid.imready.client;
 
-import java.util.Collections;
+import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.List;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -15,18 +14,18 @@ public class Meeting {
     private int id;
     private String name;
     private int state;
-    private List<Participant> participants;
+    private ArrayList<Participant> participants;
     private boolean decorated;
     private boolean newToUser;
     private boolean changedToUser;
 
-    public Meeting(int id, String name, int state, List<Participant> participants, 
+    public Meeting(int id, String name, int state, ArrayList<Participant> participants, 
     		boolean decorated, boolean newToUser, boolean changedToUser) {
         this.id = id;
         this.name = name;
         this.state = state;
         if (participants != null) {
-        	this.participants = Collections.unmodifiableList(participants);
+        	this.participants = participants;
         }
         this.decorated = decorated;
         this.newToUser = newToUser;
@@ -63,9 +62,9 @@ public class Meeting {
     	return meetingObject;
     }
 
-    public void setParticipants(List<Participant> p) {
-    	if (participants != null) {
-    		this.participants = Collections.unmodifiableList(p);
+    public void setParticipants(ArrayList<Participant> participants) {
+    	if (this.participants != null) {
+    		this.participants = participants;
     	}
     }
 
@@ -77,7 +76,7 @@ public class Meeting {
     public int getId() { return id; }
     public String getName() { return name; }
     public int getState() { return state; }
-    public List<Participant> getParticipants() { return participants; }
+    public ArrayList<Participant> getParticipants() { return participants; }
     public boolean isDecorated() { return decorated; }
     public boolean isNewToUser() { return newToUser; }
     public boolean isChangedToUser() { return changedToUser; }

@@ -156,8 +156,10 @@ public class MyMeetings extends ListActivity{
 				if ( meetingId == -1){
 					return;
 				}
-
 				String meetingName = data.getStringExtra(IMReady.RETURNS_MEETING_NAME);
+				if ( meetingName == null ){
+					return;
+				}
 				Participant p = new Participant(new User(IMReady.getUserName(this), IMReady.getNickName(this)), 0, true);
 				ArrayList<Participant> pList = new ArrayList<Participant>();
 				pList.add(p);

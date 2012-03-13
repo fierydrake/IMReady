@@ -4,6 +4,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import android.app.Activity;
+import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 import android.view.KeyEvent;
@@ -26,7 +27,6 @@ public class AddParticipant extends Activity {
 
         setContentView(R.layout.add_participant);
 
-        // DRY up (pasta'd from ViewMeeting)
         Uri internalMeetingUri = getIntent().getData();
 
         if (!"content".equals(internalMeetingUri.getScheme())) { return; } // TODO Error handling
@@ -36,10 +36,8 @@ public class AddParticipant extends Activity {
         Pattern p = Pattern.compile("/meeting/(\\d+)/(.*)");
         Matcher m = p.matcher(meetingPath);
         if (!m.matches()) { return; } // TODO Error handling
-        // DRY up end
 
         final int meetingId = Integer.parseInt(m.group(1));
-//        String meetingName = Uri.decode(m.group(2));
 
         final Button addParticipant = (Button)findViewById(R.id.add_participant_button);
         final EditText username = (EditText)findViewById(R.id.add_participant_user_name);
@@ -75,7 +73,10 @@ public class AddParticipant extends Activity {
             }
             @Override
             public void success(Void _) {
-                //Toast.makeText(AddParticipant.this, "Added '" + userId + "' to meeting with id " + meetingId, Toast.LENGTH_SHORT).show();
+            	final Intent i = new Intent();
+                i.putExtra(IMReady.RETURNS_MEETING_ID, meetingId);
+                i.putExtra(IMReady.RETURNS_USER_ID, userId);
+                setResult(RESULT_OK, i);
                 finish();
             }
             @Override

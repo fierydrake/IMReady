@@ -33,6 +33,8 @@ public class IMReady {
 	
 	public static final String RETURNS_MEETING_ID   = "MeetingID";
 	public static final String RETURNS_MEETING_NAME = "MeetingName";
+	public static final String RETURNS_USER_ID      = "UserID";
+	public static final String RETURNS_USER_NAME    = "UserName";
 
 	public static final String PREFERENCES_KEYS_ACCOUNT_DEFINED    = "accountDefined";
 	public static final String PREFERENCES_KEYS_USERNAME           = "accountUserName";
@@ -217,6 +219,12 @@ public class IMReady {
 		return currentMeetings;
 	}
 	
+	/**
+	 * Add a new Meeting into the local data store.
+	 * 
+	 * @param meeting
+	 * @param c
+	 */
 	public static final synchronized void addLocallyCreatedMeeting(Meeting meeting, ContextWrapper c){
 		ArrayList<Meeting> currentMeetings = getMeetingState(c);
 		meeting.setDecorated(false);
@@ -225,6 +233,52 @@ public class IMReady {
 		currentMeetings.add(meeting);
 		setMeetingState(currentMeetings, c);
 	}
+
+	public static final synchronized void addLocallyAddedParticipant(int meetingID, Participant participant, ContextWrapper c){
+		ArrayList<Meeting> currentMeetings = getMeetingState(c);
+
+		// Go through known list looking for this meeting so we can add the participant.
+		Iterator<Meeting> currentMeetingsIter = currentMeetings.iterator();
+		while(currentMeetingsIter.hasNext()){
+			Meeting thisCurrentMeeting = currentMeetingsIter.next();
+			if ( thisCurrentMeeting.getId() == meetingID ){
+				ArrayList<Participant> participants = thisCurrentMeeting.getParticipants();
+				participants.add(participant);
+			}
+		}
+
+		setMeetingState(currentMeetings, c);
+	}
+	
+	public static final synchronized void setMyselfReady(int meetingID, String userID, ContextWrapper c){
+		ArrayList<Meeting> currentMeetings = getMeetingState(c);
+		
+		// Go through known list looking for this meeting so we can add the participant.
+		Iterator<Meeting> currentMeetingsIter = currentMeetings.iterator();
+		while(currentMeetingsIter.hasNext()){
+			Meeting thisCurrentMeeting = currentMeetingsIter.next();
+			if ( thisCurrentMeeting.getId() == meetingID ){
+				ArrayList<Participant> participants = thisCurrentMeeting.getParticipants();
+				Iterator<Participant> participantsIter = participants.iterator();
+				boolean meetingReady = true;
+				while(participantsIter.hasNext()){
+					Participant thisParticipant = participantsIter.next();
+					if(thisParticipant.getUser().getId() == userID){
+						thisParticipant.setState(1);
+					}
+					if(thisParticipant.getState() != 1){
+						meetingReady = false;
+					}
+				}
+				if(meetingReady){
+					thisCurrentMeeting.setState(1);
+				}
+			}
+		}
+		
+		setMeetingState(currentMeetings, c);
+	}
+
 	/**
 	 * This returns true if the two lists of participants are different.  The comparison only conciders
 	 * the Participant id and state.
