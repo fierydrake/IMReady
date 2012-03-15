@@ -2,6 +2,8 @@ package com.monstersfromtheid.imready;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 import android.app.ListActivity;
 import android.content.BroadcastReceiver;
@@ -26,6 +28,7 @@ import android.widget.TextView;
 import com.monstersfromtheid.imready.client.Meeting;
 import com.monstersfromtheid.imready.client.Participant;
 import com.monstersfromtheid.imready.client.User;
+import com.monstersfromtheid.imready.service.CheckMeetingsAlarmReceiver;
 
 // TODO - Need to clear notifications on any action?  It tells me there is a change, i follow the change in the app, notification remains.
 // TODO - notification on ready meetings?  Why?  We can't get rid of it.
@@ -44,6 +47,7 @@ public class MyMeetings extends ListActivity{
 	private SimpleAdapter adapter; 
 	private Button createMeetingButton;
 	private ResponseReceiver receiver;
+	private ScheduledThreadPoolExecutor serverChecker;
 
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -119,18 +123,26 @@ public class MyMeetings extends ListActivity{
 		receiver = new ResponseReceiver();
 		registerReceiver(receiver, filter);
 
-		// Sort alarm as quick
-		// QUESTION - Should we use a ScheduledThreadPoolExecutor to periodically call the mother-ship?
-		IMReady.setNextAlarm(this, true);
+		// Start a scheduled job to poll the server.
+		Runnable pollServer = new Runnable() {
+			public void run() {
+				Intent broadcastIntent = new Intent(MyMeetings.this, CheckMeetingsAlarmReceiver.class);
+				sendBroadcast(broadcastIntent);
+			}
+		};
+		serverChecker = new ScheduledThreadPoolExecutor(1);
+		serverChecker.scheduleWithFixedDelay(pollServer, 
+				IMReady.VALUES_REFRESH_DELAY, 
+				IMReady.VALUES_REFRESH_PERIOD, 
+				TimeUnit.MILLISECONDS);
 	}
 
 	@Override
 	public void onStop() {
 		super.onStop();
 
-		// Cancel whatever ScheduledThreadPoolExecutor we were using?
-		// Sort alarm as slow
-		IMReady.setNextAlarm(this);
+		// Cancel the schedule runner.
+		serverChecker.shutdownNow();
 
 		unregisterReceiver(receiver);
 		receiver = null;

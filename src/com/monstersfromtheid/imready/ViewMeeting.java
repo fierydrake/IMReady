@@ -3,6 +3,8 @@ package com.monstersfromtheid.imready;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -30,6 +32,9 @@ import com.monstersfromtheid.imready.client.ServerAPI;
 import com.monstersfromtheid.imready.client.ServerAPI.Action;
 import com.monstersfromtheid.imready.client.ServerAPICallFailedException;
 import com.monstersfromtheid.imready.client.User;
+import com.monstersfromtheid.imready.service.CheckMeetingsAlarmReceiver;
+
+// TODO - doesn't update while I'm looking at it and there is a change to the meeting I'm looking at
 
 public class ViewMeeting extends ListActivity {
 	public static final int ACTIVITY_ADD_PARTICIPANT = 1;
@@ -39,6 +44,8 @@ public class ViewMeeting extends ListActivity {
             R.id.meeting_participant_list_item_readiness };
     private SimpleAdapter adapter;
     private ResponseReceiver receiver;
+    private ScheduledThreadPoolExecutor serverChecker;
+    Runnable pollServer;
     
     private ServerAPI api;
     private int meetingId;
@@ -157,18 +164,26 @@ public class ViewMeeting extends ListActivity {
 		receiver = new ResponseReceiver();
 		registerReceiver(receiver, filter);
 
-		// Sort alarm as quick
-		// QUESTION - Should we use a ScheduledThreadPoolExecutor to periodically call the mother-ship?
-		IMReady.setNextAlarm(this, true);
+		// Start a scheduled job to poll the server.
+		Runnable pollServer = new Runnable() {
+			public void run() {
+				Intent broadcastIntent = new Intent(ViewMeeting.this, CheckMeetingsAlarmReceiver.class);
+				sendBroadcast(broadcastIntent);
+			}
+		};
+		serverChecker = new ScheduledThreadPoolExecutor(1);
+		serverChecker.scheduleWithFixedDelay(pollServer, 
+				IMReady.VALUES_REFRESH_DELAY, 
+				IMReady.VALUES_REFRESH_PERIOD, 
+				TimeUnit.MILLISECONDS);
 	}
 
 	@Override
 	public void onStop() {
 		super.onStop();
 
-		// Cancel whatever ScheduledThreadPoolExecutor we were using?
-		// Sort alarm as slow
-		IMReady.setNextAlarm(this);
+		// Cancel the schedule runner.
+		serverChecker.shutdownNow();
 
 		unregisterReceiver(receiver);
 		receiver = null;

@@ -31,6 +31,9 @@ public class IMReady {
 	
 	public static final String ACTIONS_ACOUNT_CHANGE_DETAILS = "accountDetailsChange";
 	
+	public static final int VALUES_REFRESH_DELAY  = 1000;
+	public static final int VALUES_REFRESH_PERIOD = 15000;
+	
 	public static final String RETURNS_MEETING_ID   = "MeetingID";
 	public static final String RETURNS_MEETING_NAME = "MeetingName";
 	public static final String RETURNS_USER_ID      = "UserID";
@@ -452,30 +455,18 @@ public class IMReady {
 	 * 
 	 * If the notification level is zero, then any existing alarm is cancelled.
 	 * 
-	 * @param context 
-	 */
-	public static final void setNextAlarm(Context context){
-		setNextAlarm(context, false);
-	}
-
-	/**
-	 * Set the next alarm.  Use the current time, the polling interval settings and the 
-	 * notification level to work out when to set the alarm for, if at all. 
-	 * 
-	 * If the notification level is zero, then any existing alarm is cancelled.
-	 * 
 	 * If connected is true, then we set the interval to 20 seconds.
 	 * 
 	 * @param context
 	 * @param connected - Is an Activity running at the moment? 
 	 */
-	public static final void setNextAlarm(Context context, boolean connected){
+	public static final void setNextAlarm(Context context){
 		AlarmManager alarm = (AlarmManager)context.getSystemService(Context.ALARM_SERVICE);
 	    Intent i = new Intent(context, CheckMeetingsAlarmReceiver.class);
 	    PendingIntent pi = PendingIntent.getBroadcast(context, 0, i, 0);
 
 	    // If we're not connected and notifications are off, always turn off the alarm 
-	    if( !connected && getNotificationLevel(new ContextWrapper(context)) == 0 ){
+	    if( getNotificationLevel(new ContextWrapper(context)) == 0 ){
 	    	alarm.cancel(pi);
 	    	return;
 	    }
@@ -485,28 +476,24 @@ public class IMReady {
 	    // TODO - add the check to see if anything needs to be done.
 
 		long interval;
-		if(connected) {
-			interval = 20000;
-		} else {
-			switch ( getPollingInterval(new ContextWrapper(context)) ) {
-			case 0:
-				interval = AlarmManager.INTERVAL_FIFTEEN_MINUTES;
-				//interval = 10000;
-				break;
+		switch ( getPollingInterval(new ContextWrapper(context)) ) {
+		case 0:
+			interval = AlarmManager.INTERVAL_FIFTEEN_MINUTES;
+			//interval = 10000;
+			break;
 
-			case 1:
-				interval = AlarmManager.INTERVAL_HOUR;
-				break;
+		case 1:
+			interval = AlarmManager.INTERVAL_HOUR;
+			break;
 
-			case 2:
-				int currentHour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY);
-				interval = ( 8 < currentHour && currentHour < 23 ) ? AlarmManager.INTERVAL_FIFTEEN_MINUTES : AlarmManager.INTERVAL_HOUR;
-				break;
+		case 2:
+			int currentHour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY);
+			interval = ( 8 < currentHour && currentHour < 23 ) ? AlarmManager.INTERVAL_FIFTEEN_MINUTES : AlarmManager.INTERVAL_HOUR;
+			break;
 
-			default:
-				interval = AlarmManager.INTERVAL_HOUR;
-				break;
-			}
+		default:
+			interval = AlarmManager.INTERVAL_HOUR;
+			break;
 		}
 		
 		alarm.setInexactRepeating(AlarmManager.ELAPSED_REALTIME_WAKEUP,
