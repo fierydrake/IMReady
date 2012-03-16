@@ -30,9 +30,7 @@ import com.monstersfromtheid.imready.client.Participant;
 import com.monstersfromtheid.imready.client.User;
 import com.monstersfromtheid.imready.service.CheckMeetingsAlarmReceiver;
 
-// TODO - Need to clear notifications on any action?  It tells me there is a change, i follow the change in the app, notification remains.
 // TODO - Decoration on ready meetings?  Why?  We can't get rid of it.
-// TODO - Meeting going ready from me gives a notification with 1 ready.
 // TODO - I set myself to ready and I get a notification.
 
 public class MyMeetings extends ListActivity implements IMeetingChangeReceiver {

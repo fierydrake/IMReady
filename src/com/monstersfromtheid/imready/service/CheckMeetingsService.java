@@ -100,6 +100,13 @@ public class CheckMeetingsService extends IntentService {
 			}
 		}
 
+		// Broadcast to any registered receivers that we've got the new latest info.
+		// There may or may not be changes, but they should redraw
+		Intent broadcastIntent = new Intent();
+		broadcastIntent.setAction(IMeetingChangeReceiver.ACTION_RESP);
+		broadcastIntent.addCategory(Intent.CATEGORY_DEFAULT);
+		sendBroadcast(broadcastIntent);
+
 		// Assume the notification lasts until it is acted on by the user.
 		// This means that I only create a new notification if I saw something change since I last looked.
 		// There is a special case: New meeting X, delete meeting X.  In this case, I delete the notification.
@@ -151,11 +158,6 @@ public class CheckMeetingsService extends IntentService {
 		notification.flags |= Notification.FLAG_SHOW_LIGHTS;
 		notification.ledOnMS = 300;
 		notification.ledOffMS = 1100;				
-		// Broadcast to any registered receivers that something has changed
-		Intent broadcastIntent = new Intent();
-		broadcastIntent.setAction(IMeetingChangeReceiver.ACTION_RESP);
-		broadcastIntent.addCategory(Intent.CATEGORY_DEFAULT);
-		sendBroadcast(broadcastIntent);
 
 		CharSequence notificationTitle = getString( R.string.app_name );
 		Context context = getApplicationContext();

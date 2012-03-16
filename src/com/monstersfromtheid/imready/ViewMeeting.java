@@ -9,8 +9,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import android.app.ListActivity;
-import android.content.BroadcastReceiver;
-import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.graphics.Color;
@@ -34,7 +32,8 @@ import com.monstersfromtheid.imready.client.ServerAPICallFailedException;
 import com.monstersfromtheid.imready.client.User;
 import com.monstersfromtheid.imready.service.CheckMeetingsAlarmReceiver;
 
-// TODO - doesn't update while I'm looking at it and there is a change to the meeting I'm looking at
+// TODO - Sit there staring at a meeting that just changed and the notification keeps getting reissued.
+//        Leave app and return and it's happy.
 
 public class ViewMeeting extends ListActivity implements IMeetingChangeReceiver {
 	public static final int ACTIVITY_ADD_PARTICIPANT = 1;
@@ -132,7 +131,7 @@ public class ViewMeeting extends ListActivity implements IMeetingChangeReceiver 
         final Button addParticipant = (Button)getLayoutInflater().inflate(R.layout.view_meeting_add_participant_button, null);
         addParticipant.setOnClickListener(new OnClickListener() {
         	public void onClick(View v) {
-            	Uri internalMeetingUri = Uri.parse("content://com.monstersfromtheid.imready/meeting/" + meetingId + "/" + Uri.encode(meetingName)); // TODO hackish
+            	Uri internalMeetingUri = Uri.parse("content://com.monstersfromtheid.imready/meeting/" + meetingId + "/" + Uri.encode(meetingName));
             	startActivityForResult( new Intent(Intent.ACTION_VIEW, internalMeetingUri, ViewMeeting.this, AddParticipant.class), ACTIVITY_ADD_PARTICIPANT);
         	}
         });
@@ -143,14 +142,6 @@ public class ViewMeeting extends ListActivity implements IMeetingChangeReceiver 
 
 		setListAdapter(adapter);
     }
-    
-	// The CheckMeetingsService broadcasts when it sees a change to it's list of meetings.
-	// NB We need to use a BroadcastReceiver as the UI thread is the only one that can modifying the View. 
-	public class ResponseReceiver extends BroadcastReceiver {
-		public void onReceive(Context context, Intent intent) {
-			processMeetingsChange();
-		}
-	}
 
 	@Override
 	public void onStart() {
@@ -202,6 +193,8 @@ public class ViewMeeting extends ListActivity implements IMeetingChangeReceiver 
 					for (Participant newParticipant : thisMeeting.getParticipants() ) {
 						if(newParticipant.getUser().getId().compareTo(userID) != 0){
 							addParticipant(newParticipant);
+						} else {
+							setMyStatus(newParticipant.getState() == 1);
 						}
 					}
 				} catch (NullPointerException e) {

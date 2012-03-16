@@ -193,7 +193,7 @@ public class IMReady {
 						thisCurrentMeeting.setChangedToUser(true);
 					}
 					// NB - we always take the latest set of participant info; it will include any
-					// name changes and "notified" changes.  We don't flag those as interesting to use at the moment.
+					// name changes and "notified" changes.  We don't flag those as interesting to us at the moment.
 					thisCurrentMeeting.setParticipants(thisLatestMeeting.getParticipants());
 
 					latestMeetingsIter.remove();
@@ -268,7 +268,7 @@ public class IMReady {
 				boolean meetingReady = true;
 				while(participantsIter.hasNext()){
 					Participant thisParticipant = participantsIter.next();
-					if(thisParticipant.getUser().getId() == userID){
+					if(thisParticipant.getUser().getId().compareTo(userID) == 0){
 						thisParticipant.setState(1);
 					}
 					if(thisParticipant.getState() != 1){
