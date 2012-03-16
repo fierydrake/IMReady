@@ -6,7 +6,7 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 import android.app.ListActivity;
-import android.content.BroadcastReceiver;
+import android.app.NotificationManager;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
@@ -31,11 +31,11 @@ import com.monstersfromtheid.imready.client.User;
 import com.monstersfromtheid.imready.service.CheckMeetingsAlarmReceiver;
 
 // TODO - Need to clear notifications on any action?  It tells me there is a change, i follow the change in the app, notification remains.
-// TODO - notification on ready meetings?  Why?  We can't get rid of it.
+// TODO - Decoration on ready meetings?  Why?  We can't get rid of it.
 // TODO - Meeting going ready from me gives a notification with 1 ready.
 // TODO - I set myself to ready and I get a notification.
 
-public class MyMeetings extends ListActivity{
+public class MyMeetings extends ListActivity implements IMeetingChangeReceiver {
 	public static final int ACTIVITY_CREATE_MEETING = 0;
 	public static final int ACTIVITY_VIEW_MEETING   = 1;
 
@@ -46,7 +46,7 @@ public class MyMeetings extends ListActivity{
 			R.id.meeting_list_item_decoration};
 	private SimpleAdapter adapter; 
 	private Button createMeetingButton;
-	private ResponseReceiver receiver;
+	private MeetingChangeReceiver receiver;
 	private ScheduledThreadPoolExecutor serverChecker;
 
 	public void onCreate(Bundle savedInstanceState) {
@@ -102,25 +102,19 @@ public class MyMeetings extends ListActivity{
 
 		setListAdapter(adapter);
 	}
-	
-	// The CheckMeetingsService broadcasts when it sees a change to it's list of meetings.
-	// NB We need to use a BroadcastReceiver as the UI thread is the only one that can modifying the View. 
-	public class ResponseReceiver extends BroadcastReceiver {
-		public static final String ACTION_RESP = "com.monstersfromtheid.imready.MEETING_CHANGES";
-
-		public void onReceive(Context context, Intent intent) {
-			processMeetingsChange();
-		}
-	}
 
 	@Override
 	public void onStart() {
 		super.onStart();
+		
+		// Clear any notifications - decorations should cover any visual cue requirements
+		NotificationManager notMgr = (NotificationManager)getSystemService(Context.NOTIFICATION_SERVICE);
+		notMgr.cancel(IMReady.NOTIFICATION_ID);
 
 		// Register the broadcast receiver to catch change notifications
-		IntentFilter filter = new IntentFilter(ResponseReceiver.ACTION_RESP);
+		IntentFilter filter = new IntentFilter(IMeetingChangeReceiver.ACTION_RESP);
 		filter.addCategory(Intent.CATEGORY_DEFAULT);
-		receiver = new ResponseReceiver();
+		receiver = new MeetingChangeReceiver(this);
 		registerReceiver(receiver, filter);
 
 		// Start a scheduled job to poll the server.
@@ -149,7 +143,7 @@ public class MyMeetings extends ListActivity{
 	}
 
 	// We've been notified of a change, so go get the latest information and handle it
-	private void processMeetingsChange() {
+	public void processMeetingsChange() {
 		clearMeetings();
 		
 		for (Meeting newMeeting : IMReady.getMeetingState(this)) {

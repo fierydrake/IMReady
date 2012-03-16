@@ -15,8 +15,8 @@ import android.net.ConnectivityManager;
 import android.os.PowerManager;
 
 import com.monstersfromtheid.imready.IMReady;
+import com.monstersfromtheid.imready.IMeetingChangeReceiver;
 import com.monstersfromtheid.imready.MyMeetings;
-import com.monstersfromtheid.imready.MyMeetings.ResponseReceiver;
 import com.monstersfromtheid.imready.R;
 import com.monstersfromtheid.imready.client.Meeting;
 import com.monstersfromtheid.imready.client.ServerAPI;
@@ -26,7 +26,6 @@ public class CheckMeetingsService extends IntentService {
 
 	private static PowerManager.WakeLock lock = null;
 	public static final String LOCK_NAME = "com.monstersfromtheid.imready.service.CheckMeetingsService";
-	private static final int NOTIFICATION_ID = 1;
 	private static ServerAPI api;
 	private static String userName;
 
@@ -154,7 +153,7 @@ public class CheckMeetingsService extends IntentService {
 		notification.ledOffMS = 1100;				
 		// Broadcast to any registered receivers that something has changed
 		Intent broadcastIntent = new Intent();
-		broadcastIntent.setAction(ResponseReceiver.ACTION_RESP);
+		broadcastIntent.setAction(IMeetingChangeReceiver.ACTION_RESP);
 		broadcastIntent.addCategory(Intent.CATEGORY_DEFAULT);
 		sendBroadcast(broadcastIntent);
 
@@ -165,7 +164,7 @@ public class CheckMeetingsService extends IntentService {
 		PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, notificationIntent, PendingIntent.FLAG_CANCEL_CURRENT);
 		notification.setLatestEventInfo(context, notificationTitle, notificationMessage, pendingIntent);
 
-		notMgr.notify(NOTIFICATION_ID, notification);
+		notMgr.notify(IMReady.NOTIFICATION_ID, notification);
 	}
 
 	protected void onHandleIntent(Intent intent) {

@@ -36,14 +36,14 @@ import com.monstersfromtheid.imready.service.CheckMeetingsAlarmReceiver;
 
 // TODO - doesn't update while I'm looking at it and there is a change to the meeting I'm looking at
 
-public class ViewMeeting extends ListActivity {
+public class ViewMeeting extends ListActivity implements IMeetingChangeReceiver {
 	public static final int ACTIVITY_ADD_PARTICIPANT = 1;
     private ArrayList<HashMap<String, ?>> participants = new ArrayList<HashMap<String, ?>>();
     private String[] from = new String[] { "name", "readiness" };
     private int[] to = new int[] { R.id.meeting_participant_list_item_name,  
             R.id.meeting_participant_list_item_readiness };
     private SimpleAdapter adapter;
-    private ResponseReceiver receiver;
+    private MeetingChangeReceiver receiver;
     private ScheduledThreadPoolExecutor serverChecker;
     Runnable pollServer;
     
@@ -139,7 +139,7 @@ public class ViewMeeting extends ListActivity {
         getListView().addFooterView(addParticipant);
         
         // Populate the list with the latest we have recorded.
-		processMeetingChange();
+		processMeetingsChange();
 
 		setListAdapter(adapter);
     }
@@ -147,10 +147,8 @@ public class ViewMeeting extends ListActivity {
 	// The CheckMeetingsService broadcasts when it sees a change to it's list of meetings.
 	// NB We need to use a BroadcastReceiver as the UI thread is the only one that can modifying the View. 
 	public class ResponseReceiver extends BroadcastReceiver {
-		public static final String ACTION_RESP = "com.monstersfromtheid.imready.PARTICIPANT_CHANGES";
-
 		public void onReceive(Context context, Intent intent) {
-			processMeetingChange();
+			processMeetingsChange();
 		}
 	}
 
@@ -159,9 +157,9 @@ public class ViewMeeting extends ListActivity {
 		super.onStart();
 
 		// Register the broadcast receiver to catch change notifications
-		IntentFilter filter = new IntentFilter(ResponseReceiver.ACTION_RESP);
+		IntentFilter filter = new IntentFilter(ACTION_RESP);
 		filter.addCategory(Intent.CATEGORY_DEFAULT);
-		receiver = new ResponseReceiver();
+		receiver = new MeetingChangeReceiver(this);
 		registerReceiver(receiver, filter);
 
 		// Start a scheduled job to poll the server.
@@ -190,7 +188,7 @@ public class ViewMeeting extends ListActivity {
 	}
 	
 	// We've been notified of a change, so go get the latest information and handle it
-	private void processMeetingChange() {
+	public void processMeetingsChange() {
 		clearParticipants();
 		
 		ArrayList<Meeting> meetingList = IMReady.getMeetingState(this);
@@ -234,7 +232,7 @@ public class ViewMeeting extends ListActivity {
 				Participant participant = new Participant(new User(userID, userNickName), 0, false);
 				IMReady.addLocallyAddedParticipant(meetingId, participant, this);
 
-				processMeetingChange();
+				processMeetingsChange();
 			}
 			break;
 			

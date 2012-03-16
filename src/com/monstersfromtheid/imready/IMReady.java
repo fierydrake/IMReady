@@ -34,6 +34,8 @@ public class IMReady {
 	public static final int VALUES_REFRESH_DELAY  = 1000;
 	public static final int VALUES_REFRESH_PERIOD = 15000;
 	
+	public static final int NOTIFICATION_ID = 1;
+	
 	public static final String RETURNS_MEETING_ID   = "MeetingID";
 	public static final String RETURNS_MEETING_NAME = "MeetingName";
 	public static final String RETURNS_USER_ID      = "UserID";
