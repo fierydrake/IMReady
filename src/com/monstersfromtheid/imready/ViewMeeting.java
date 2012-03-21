@@ -32,9 +32,6 @@ import com.monstersfromtheid.imready.client.ServerAPICallFailedException;
 import com.monstersfromtheid.imready.client.User;
 import com.monstersfromtheid.imready.service.CheckMeetingsAlarmReceiver;
 
-// TODO - Sit there staring at a meeting that just changed and the notification keeps getting reissued.
-//        Leave app and return and it's happy.
-
 public class ViewMeeting extends ListActivity implements IMeetingChangeReceiver {
 	public static final int ACTIVITY_ADD_PARTICIPANT = 1;
     private ArrayList<HashMap<String, ?>> participants = new ArrayList<HashMap<String, ?>>();
@@ -200,6 +197,7 @@ public class ViewMeeting extends ListActivity implements IMeetingChangeReceiver 
 				} catch (NullPointerException e) {
 					// Problem with the participant list
 				}
+				IMReady.markMeetingAsChangedToUser(meetingId, false, this);
 				break;
 			}
 		}
