@@ -54,7 +54,8 @@ public class CheckMeetingsService extends IntentService {
 	 * @param latestJSON
 	 */
 	protected void generateNotifications(Intent intent){
-		if( api == null && IMReady.isAccountDefined(this) ){
+		if ( !IMReady.isAccountDefined(this) ) return;
+		if( api == null ){
 			userName = IMReady.getUserName(this);
 			api = new ServerAPI(userName);
 		}
