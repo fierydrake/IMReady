@@ -118,6 +118,7 @@ public class ViewMeeting extends ListActivity implements IMeetingChangeReceiver 
         				/* Set the status colour to green */
         				setMyStatus(true);
         				IMReady.setMyselfReady(meetingId, userID, ViewMeeting.this);
+        				processMeetingsChange();
         			}
         			@Override
         			public void failure(ServerAPICallFailedException e) {
