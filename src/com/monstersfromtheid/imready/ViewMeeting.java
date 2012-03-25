@@ -20,6 +20,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
+import android.widget.ListView;
 import android.widget.SimpleAdapter;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -49,6 +50,8 @@ public class ViewMeeting extends ListActivity implements IMeetingChangeReceiver 
     String userID;
     private boolean myStatus = false;
     View setReadiness;
+    
+    Button addParticipantButton; 
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -125,14 +128,13 @@ public class ViewMeeting extends ListActivity implements IMeetingChangeReceiver 
         });
         getListView().addHeaderView(setReadiness);
         
-        final Button addParticipant = (Button)getLayoutInflater().inflate(R.layout.view_meeting_add_participant_button, null);
-        addParticipant.setOnClickListener(new OnClickListener() {
+        addParticipantButton = (Button)getLayoutInflater().inflate(R.layout.view_meeting_add_participant_button, null);
+        addParticipantButton.setOnClickListener(new OnClickListener() {
         	public void onClick(View v) {
             	Uri internalMeetingUri = Uri.parse("content://com.monstersfromtheid.imready/meeting/" + meetingId + "/" + Uri.encode(meetingName));
             	startActivityForResult( new Intent(Intent.ACTION_VIEW, internalMeetingUri, ViewMeeting.this, AddParticipant.class), ACTIVITY_ADD_PARTICIPANT);
         	}
         });
-        getListView().addFooterView(addParticipant);
         
         // Populate the list with the latest we have recorded.
 		processMeetingsChange();
@@ -184,8 +186,8 @@ public class ViewMeeting extends ListActivity implements IMeetingChangeReceiver 
 		Meeting thisMeeting;
 		while(iter.hasNext()){
 			thisMeeting = iter.next();
-			if(thisMeeting.getId() == meetingId){
-				updateMeetingInfo(thisMeeting.getName(), thisMeeting.getId());
+			if(thisMeeting.getId() == meetingId) {
+				updateMeetingInfo(thisMeeting.getName(), thisMeeting.getId(), thisMeeting.getState());
 				try {
 					for (Participant newParticipant : thisMeeting.getParticipants() ) {
 						if(newParticipant.getUser().getId().compareTo(userID) != 0){
@@ -233,7 +235,30 @@ public class ViewMeeting extends ListActivity implements IMeetingChangeReceiver 
 	}
 
     private void updateMeetingInfo(String meetingName, int meetingId) {
+    	updateMeetingInfo(meetingName, meetingId, -1);
+    }
+    
+    private void updateMeetingInfo(String meetingName, int meetingId, int meetingState) {
         setTitle("Meeting: " + meetingName + " (id=" + meetingId + ")");
+        /* 
+         * Place the Add Participants button in the footer, if and only if
+         * the meeting is NOT READY
+         */
+        ListView listView = getListView();
+        switch (meetingState) {
+        case Meeting.STATE_NOT_READY:
+        	if (listView.getFooterViewsCount() == 0) {
+        		getListView().addFooterView(addParticipantButton);
+        	}
+        	break;
+        case Meeting.STATE_READY:
+        	if (listView.getFooterViewsCount() > 0) {
+        		getListView().removeFooterView(addParticipantButton);
+        	}
+        	break;
+    	default:
+        	// Do nothing, meeting state is not known
+        }
     }
 
     private void clearParticipants() {
