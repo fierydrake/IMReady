@@ -32,6 +32,7 @@ import com.monstersfromtheid.imready.service.CheckMeetingsAlarmReceiver;
 
 // TODO - Decoration on ready meetings?  Why?  We can't get rid of it.
 // TODO - I set myself to ready and I get a notification.
+// TODO - Should meetings have a timestamp
 
 public class MyMeetings extends ListActivity implements IMeetingChangeReceiver {
 	public static final int ACTIVITY_CREATE_MEETING = 0;
@@ -178,12 +179,12 @@ public class MyMeetings extends ListActivity implements IMeetingChangeReceiver {
 				processMeetingsChange();
 
 				Uri internalMeetingUri = Uri.parse("content://com.monstersfromtheid.imready/meeting/" + meetingId + "/" + Uri.encode(meetingName));
-				startActivity( new Intent(Intent.ACTION_VIEW, internalMeetingUri, MyMeetings.this, ViewMeeting.class) );
+				startActivityForResult( new Intent(Intent.ACTION_VIEW, internalMeetingUri, MyMeetings.this, ViewMeeting.class), ACTIVITY_VIEW_MEETING );
 			}
 			break;
 			
 		case ACTIVITY_VIEW_MEETING:
-			if(resultCode == RESULT_OK) {
+			if (resultCode == RESULT_OK) {
 				IMReady.markMeetingAsDecorated(data.getIntExtra(IMReady.RETURNS_MEETING_ID, 0), false, this);
 				processMeetingsChange();
 			}

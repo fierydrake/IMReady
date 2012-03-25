@@ -260,24 +260,25 @@ public class IMReady {
 		
 		// Go through known list looking for this meeting so we can add the participant.
 		Iterator<Meeting> currentMeetingsIter = currentMeetings.iterator();
-		while(currentMeetingsIter.hasNext()){
+		while (currentMeetingsIter.hasNext()) {
 			Meeting thisCurrentMeeting = currentMeetingsIter.next();
-			if ( thisCurrentMeeting.getId() == meetingID ){
+			if ( thisCurrentMeeting.getId() == meetingID ) {
 				ArrayList<Participant> participants = thisCurrentMeeting.getParticipants();
 				Iterator<Participant> participantsIter = participants.iterator();
 				boolean meetingReady = true;
-				while(participantsIter.hasNext()){
+				while (participantsIter.hasNext()) {
 					Participant thisParticipant = participantsIter.next();
-					if(thisParticipant.getUser().getId().compareTo(userID) == 0){
-						thisParticipant.setState(1);
+					if (thisParticipant.getUser().getId().equals(userID)) {
+						thisParticipant.setState(Participant.STATE_READY);
 					}
-					if(thisParticipant.getState() != 1){
+					if (thisParticipant.getState() != Participant.STATE_READY) {
 						meetingReady = false;
 					}
 				}
-				if(meetingReady){
-					thisCurrentMeeting.setState(1);
+				if (meetingReady) {
+					thisCurrentMeeting.setState(Meeting.STATE_READY);
 				}
+				break;
 			}
 		}
 		
